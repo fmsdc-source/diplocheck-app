@@ -1,13 +1,14 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import re # We need this back for the manual text search!
 
 # Pull the API key from Streamlit's hidden secrets vault
 API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
-# 2. The Database (Keep your massive dictionary here!)
+# The Database
 ofm_codes = {
     "AA": "Congo, Democratic Republic of the",
     "AC": "Ivory Coast",
@@ -223,10 +224,43 @@ ofm_codes = {
     "YZ": "Azerbaijan"
 }
 
-# 3. Streamlit App UI
-st.title("US Diplomatic Plate Identifier 🚗🌍")
-st.write("Upload a photo to find out the diplomat's country!")
+# Logic to parse text when manually typing the plate
+def get_diplomat_country(plate_text):
+    # Clean up the text (remove spaces, make uppercase)
+    clean_text = plate_text.replace(" ", "").upper()
+    
+    # Regex pattern: Look for D, C, or S, followed by 2 letters, followed by digits
+    match = re.search(r'^[DCS]([A-Z]{2})\d+$', clean_text)
+    
+    if match:
+        country_code = match.group(1) # Extracts the 'XX' part
+        country = ofm_codes.get(country_code, "Unknown Code (Not in database)")
+        return country_code, country
+    else:
+        return None, "Could not recognize a valid diplomatic plate format. Remember it starts with D, C, or S."
 
+# Streamlit App UI
+st.title("US Diplomatic Plate Identifier 🚗🌍")
+st.write("Enter a plate number or upload a photo to find out the diplomat's country!")
+
+# --- OPTION 1: Text Input Mode ---
+st.subheader("Type the License Plate")
+manual_input = st.text_input("Example: DAF 1234")
+
+if manual_input:
+    code, country = get_diplomat_country(manual_input)
+    if code:
+        st.write("### Match Found!")
+        col1, col2 = st.columns(2)
+        col1.metric(label="Plate Code", value=code)
+        col2.metric(label="Accredited Country", value=country)
+    else:
+        st.error(country)
+
+st.divider()
+
+# --- OPTION 2: Camera / Photo Upload Mode ---
+st.subheader("Or Upload/Take a Photo")
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 camera_file = st.camera_input("Take a picture")
 
@@ -239,7 +273,7 @@ if image_to_process:
     
     st.write("Analyzing image with Google AI...")
     
-    # 4. Ask Gemini to find the code!
+    # Ask Gemini to find the code!
     prompt = """
     Look at this image of a vehicle or license plate. 
     Find the US diplomatic license plate. 
@@ -253,11 +287,11 @@ if image_to_process:
         ai_result = response.text.strip().upper()
         
         if ai_result == "NONE":
-            st.error("The AI couldn't clearly see a diplomatic plate in this image. Try another angle!")
+            st.error("The AI couldn't clearly see a diplomatic plate in this image. Try another angle or type it above!")
         elif len(ai_result) == 2: # Make sure it just gave us the two letters
             country = ofm_codes.get(ai_result, "Unknown Code (Not in database)")
             
-            # Using the clean Metrics layout we talked about!
+            # Using the clean Metrics layout here too!
             st.write("### Match Found!")
             col1, col2 = st.columns(2)
             col1.metric(label="Plate Code", value=ai_result)
