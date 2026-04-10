@@ -1,10 +1,14 @@
 import streamlit as st
-import re
-import pytesseract
+import google.generativeai as genai
 from PIL import Image
 
-# 1. The Database (Truncated for brevity)
-ofm_codes = ofm_codes = {
+# Pull the API key from Streamlit's hidden secrets vault
+API_KEY = st.secrets["GEMINI_API_KEY"]
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# 2. The Database (Keep your massive dictionary here!)
+ofm_codes = {
     "AA": "Congo, Democratic Republic of the",
     "AC": "Ivory Coast",
     "AF": "Japan",
@@ -219,39 +223,10 @@ ofm_codes = ofm_codes = {
     "YZ": "Azerbaijan"
 }
 
-# 2. Logic to parse the plate and look up the country
-def get_diplomat_country(plate_text):
-    # Clean up the text (remove spaces, make uppercase)
-    clean_text = plate_text.replace(" ", "").upper()
-    
-    # Regex pattern: Look for D, C, or S, followed by 2 letters, followed by digits
-    match = re.search(r'^[DCS]([A-Z]{2})\d+$', clean_text)
-    
-    if match:
-        country_code = match.group(1) # Extracts the 'XX' part
-        country = ofm_codes.get(country_code, "Unknown Code (Not in database)")
-        return country_code, country
-    else:
-        return None, "Could not recognize a valid diplomatic plate format."
-
 # 3. Streamlit App UI
 st.title("US Diplomatic Plate Identifier 🚗🌍")
-st.write("Enter a plate number or upload a photo to find out the diplomat's country!")
+st.write("Upload a photo to find out the diplomat's country!")
 
-# Text Input Mode
-st.subheader("Type the License Plate")
-manual_input = st.text_input("Example: DAF 1234")
-if manual_input:
-    code, country = get_diplomat_country(manual_input)
-    if code:
-        st.success(f"**Code:** {code} \n\n **Country:** {country}")
-    else:
-        st.error(country)
-
-st.divider()
-
-# Camera / Photo Upload Mode
-st.subheader("Or Upload/Take a Photo")
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 camera_file = st.camera_input("Take a picture")
 
@@ -260,17 +235,35 @@ image_to_process = uploaded_file or camera_file
 if image_to_process:
     # Read the image
     image = Image.open(image_to_process)
-    st.image(image, caption='Captured Plate', use_column_width=True)
+    st.image(image, caption='Captured Plate', use_container_width=True)
     
-    st.write("Extracting text from image...")
-    # Use Tesseract to extract text from the image
-    extracted_text = pytesseract.image_to_string(image)
-    st.write(f"**Raw Extracted Text:** {extracted_text.strip()}")
+    st.write("Analyzing image with Google AI...")
     
-    # Pass the extracted text through our logic
-    code, country = get_diplomat_country(extracted_text)
+    # 4. Ask Gemini to find the code!
+    prompt = """
+    Look at this image of a vehicle or license plate. 
+    Find the US diplomatic license plate. 
+    It will start with D, C, or S, followed by two letters, followed by numbers.
+    Respond ONLY with the two uppercase letters that represent the country code. 
+    If you cannot read it clearly, respond with the exact word: NONE.
+    """
     
-    if code:
-        st.success(f"🎉 **Code Identified:** {code} \n\n 🌍 **Country:** {country}")
-    else:
-        st.error("Could not find a valid diplomatic plate in this image. Try typing it manually!")
+    try:
+        response = model.generate_content([prompt, image])
+        ai_result = response.text.strip().upper()
+        
+        if ai_result == "NONE":
+            st.error("The AI couldn't clearly see a diplomatic plate in this image. Try another angle!")
+        elif len(ai_result) == 2: # Make sure it just gave us the two letters
+            country = ofm_codes.get(ai_result, "Unknown Code (Not in database)")
+            
+            # Using the clean Metrics layout we talked about!
+            st.write("### Match Found!")
+            col1, col2 = st.columns(2)
+            col1.metric(label="Plate Code", value=ai_result)
+            col2.metric(label="Accredited Country", value=country)
+        else:
+            st.warning(f"Unexpected AI response: {ai_result}")
+            
+    except Exception as e:
+        st.error(f"An error occurred while talking to the AI: {e}")
