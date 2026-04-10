@@ -278,7 +278,7 @@ def get_diplomat_info(plate_text):
     return vehicle_type, country_code, country, is_ambassador
 
 # --- 4. APP UI & LAYOUT ---
-st.title("US Diplomatic Plate Identifier 🚗🌍")
+st.title("US Diplomatic Plate Identifier")
 
 tab1, tab2 = st.tabs(["🔍 Scan a Plate", "🏆 Leaderboard"])
 
