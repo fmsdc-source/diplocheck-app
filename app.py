@@ -1,12 +1,19 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import re # We need this back for the manual text search!
+import re
+from supabase import create_client, Client
 
-# Pull the API key from Streamlit's hidden secrets vault
+# --- 1. SETUP APIS & DATABASE ---
+# Gemini
 API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
+
+# Supabase
+supabase_url = st.secrets["supabase"]["URL"]
+supabase_key = st.secrets["supabase"]["KEY"]
+supabase: Client = create_client(supabase_url, supabase_key)
 
 # The Database
 ofm_codes = {
@@ -224,80 +231,127 @@ ofm_codes = {
     "YZ": "Azerbaijan"
 }
 
-# Logic to parse text when manually typing the plate
+# --- 3. HELPER FUNCTIONS ---
+def record_scan(code, country):
+    """Sends the successful scan to our Supabase database."""
+    try:
+        # Insert a new row into the 'scans' table
+        supabase.table("scans").insert({"code": code, "country": country}).execute()
+    except Exception as e:
+        st.write("*(Note: Could not connect to scoreboard database.)*")
+
 def get_diplomat_country(plate_text):
-    # Clean up the text (remove spaces, make uppercase)
     clean_text = plate_text.replace(" ", "").upper()
-    
-    # Regex pattern: Look for D, C, or S, followed by 2 letters, followed by digits
     match = re.search(r'^[DCS]([A-Z]{2})\d+$', clean_text)
     
     if match:
-        country_code = match.group(1) # Extracts the 'XX' part
-        country = ofm_codes.get(country_code, "Unknown Code (Not in database)")
+        country_code = match.group(1)
+        country = ofm_codes.get(country_code, "Unknown Code")
         return country_code, country
-    else:
-        return None, "Could not recognize a valid diplomatic plate format. Remember it starts with D, C, or S."
+    return None, "Format not recognized."
 
-# Streamlit App UI
+# --- 4. APP UI & LAYOUT ---
 st.title("US Diplomatic Plate Identifier 🚗🌍")
-st.write("Enter a plate number or upload a photo to find out the diplomat's country!")
 
-# --- OPTION 1: Text Input Mode ---
-st.subheader("Type the License Plate")
-manual_input = st.text_input("Example: DAF 1234")
+# Add your logo (Make sure logo.png is in your folder!)
+# col1, col2, col3 = st.columns([1, 2, 1])
+# with col2:
+#     st.image("logo.png", use_container_width=True)
 
-if manual_input:
-    code, country = get_diplomat_country(manual_input)
-    if code:
-        st.write("### Match Found!")
-        col1, col2 = st.columns(2)
-        col1.metric(label="Plate Code", value=code)
-        col2.metric(label="Accredited Country", value=country)
-    else:
-        st.error(country)
+# Create two tabs at the top of the app
+tab1, tab2 = st.tabs(["🔍 Scan a Plate", "🏆 Leaderboard"])
 
-st.divider()
+# --- TAB 1: THE SCANNER ---
+with tab1:
+    st.write("Enter a plate number or upload a photo to find out the diplomat's country!")
 
-# --- OPTION 2: Camera / Photo Upload Mode ---
-st.subheader("Or Upload/Take a Photo")
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-camera_file = st.camera_input("Take a picture")
-
-image_to_process = uploaded_file or camera_file
-
-if image_to_process:
-    # Read the image
-    image = Image.open(image_to_process)
-    st.image(image, caption='Captured Plate', use_container_width=True)
+    # Text Input Mode
+    st.subheader("Type the License Plate")
+    manual_input = st.text_input("Example: DAF 1234")
     
-    st.write("Analyzing image with Google AI...")
-    
-    # Ask Gemini to find the code!
-    prompt = """
-    Look at this image of a vehicle or license plate. 
-    Find the US diplomatic license plate. 
-    It will start with D, C, or S, followed by two letters, followed by numbers.
-    Respond ONLY with the two uppercase letters that represent the country code. 
-    If you cannot read it clearly, respond with the exact word: NONE.
-    """
-    
-    try:
-        response = model.generate_content([prompt, image])
-        ai_result = response.text.strip().upper()
-        
-        if ai_result == "NONE":
-            st.error("The AI couldn't clearly see a diplomatic plate in this image. Try another angle or type it above!")
-        elif len(ai_result) == 2: # Make sure it just gave us the two letters
-            country = ofm_codes.get(ai_result, "Unknown Code (Not in database)")
+    if manual_input:
+        code, country = get_diplomat_country(manual_input)
+        if code and country != "Unknown Code":
+            record_scan(code, country) # Save to database!
             
-            # Using the clean Metrics layout here too!
             st.write("### Match Found!")
             col1, col2 = st.columns(2)
-            col1.metric(label="Plate Code", value=ai_result)
+            col1.metric(label="Plate Code", value=code)
             col2.metric(label="Accredited Country", value=country)
         else:
-            st.warning(f"Unexpected AI response: {ai_result}")
+            st.error("Could not recognize a valid diplomatic plate format.")
+
+    st.divider()
+
+    # Camera / Photo Upload Mode
+    st.subheader("Or Upload/Take a Photo")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+    camera_file = st.camera_input("Take a picture")
+
+    image_to_process = uploaded_file or camera_file
+
+    if image_to_process:
+        image = Image.open(image_to_process)
+        st.image(image, caption='Captured Plate', use_container_width=True)
+        st.write("Analyzing image with Google AI...")
+        
+        prompt = """
+        Look at this image of a vehicle or license plate. Find the US diplomatic license plate. 
+        It will start with D, C, or S, followed by two letters, followed by numbers.
+        Respond ONLY with the two uppercase letters that represent the country code. 
+        If you cannot read it clearly, respond with the exact word: NONE.
+        """
+        try:
+            response = model.generate_content([prompt, image])
+            ai_result = response.text.strip().upper()
             
-    except Exception as e:
-        st.error(f"An error occurred while talking to the AI: {e}")
+            if ai_result == "NONE":
+                st.error("The AI couldn't clearly see a diplomatic plate. Try typing it above!")
+            elif len(ai_result) == 2:
+                country = ofm_codes.get(ai_result, "Unknown Code")
+                if country != "Unknown Code":
+                    record_scan(ai_result, country) # Save to database!
+                    
+                    st.write("### Match Found!")
+                    col1, col2 = st.columns(2)
+                    col1.metric(label="Plate Code", value=ai_result)
+                    col2.metric(label="Accredited Country", value=country)
+                else:
+                    st.warning("Found code but it is not in the database.")
+        except Exception as e:
+            st.error("An error occurred with the AI.")
+
+# --- TAB 2: THE LEADERBOARD ---
+with tab2:
+    st.header("Most Looked-Up Countries")
+    st.write("See which nations are being spotted the most!")
+    
+    if st.button("Refresh Scoreboard"):
+        try:
+            # Pull all the data from Supabase
+            response = supabase.table("scans").select("*").execute()
+            data = response.data
+            
+            if data:
+                import pandas as pd
+                # Convert database data into a pandas dataframe
+                df = pd.DataFrame(data)
+                
+                # Count how many times each country appears
+                leaderboard = df['country'].value_counts().reset_index()
+                leaderboard.columns = ['Country', 'Scans']
+                
+                # Display the data nicely
+                st.dataframe(
+                    leaderboard, 
+                    use_container_width=True, 
+                    hide_index=True,
+                )
+                
+                # Create a simple bar chart
+                st.bar_chart(leaderboard, x='Country', y='Scans')
+            else:
+                st.info("No plates have been scanned yet. Be the first!")
+                
+        except Exception as e:
+            st.error(f"Could not load leaderboard: {e}")
