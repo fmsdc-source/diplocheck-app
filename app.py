@@ -25,7 +25,7 @@ st.markdown("""
         border-radius: 0 0 16px 16px;
         margin: -1rem -1rem 1.5rem -1rem;
     }
-    .diplo-header-row {
+    .diplo-header-row {/Users/frieder/Desktop/DiploApp/.streamlit
         display: flex;
         align-items: center;
         gap: 14px;
@@ -428,7 +428,7 @@ with col_title:
     st.markdown("""
     <div>
         <h1 style="margin:0; font-size:26px; color:#0f2b4c; letter-spacing:0.02em;">DiploCheck</h1>
-        <p style="margin:2px 0 0; font-size:13px; color:#6b7a8d;">Identify diplomatic license plates on D.C. streets</p>
+        <p style="margin:2px 0 0; font-size:13px; color:#6b7a8d;">Identify diplomatic license plates in the U.S.</p>
     </div>
     """, unsafe_allow_html=True)
 
