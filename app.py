@@ -2,9 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from supabase import create_client, Client
 import pandas as pd
+import plotly.graph_objects as go
+import pycountry
+import random
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -16,11 +19,9 @@ st.set_page_config(
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
-    /* Hide Streamlit chrome */
     #MainMenu, footer, header {visibility: hidden;}
     div[data-testid="stDecoration"] {display: none;}
 
-    /* Card styling */
     .diplo-card {
         background: white;
         border-radius: 14px;
@@ -29,45 +30,22 @@ st.markdown("""
         border: 1px solid #dce3ed;
         margin-bottom: 16px;
     }
-    .diplo-card h3 {
-        margin: 0 0 4px 0;
-        font-size: 16px;
-        color: #1a1a2e;
-    }
-    .diplo-card .subtitle {
-        margin: 0 0 14px 0;
-        font-size: 13px;
-        color: #6b7a8d;
-    }
+    .diplo-card h3 { margin: 0 0 4px 0; font-size: 16px; color: #1a1a2e; }
+    .diplo-card .subtitle { margin: 0 0 14px 0; font-size: 13px; color: #6b7a8d; }
 
-    /* Or divider */
     .or-divider {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        color: #6b7a8d;
-        font-size: 13px;
-        font-weight: 500;
-        margin: 4px 0;
+        display: flex; align-items: center; gap: 16px;
+        color: #6b7a8d; font-size: 13px; font-weight: 500; margin: 4px 0;
     }
-    .or-divider .line {
-        flex: 1;
-        height: 1px;
-        background: #dce3ed;
-    }
+    .or-divider .line { flex: 1; height: 1px; background: #dce3ed; }
 
-    /* Leaderboard rows */
     .leader-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px 0;
-        border-bottom: 1px solid #eef1f6;
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 0; border-bottom: 1px solid #eef1f6;
     }
     .leader-row:last-child { border-bottom: none; }
     .rank-badge {
-        width: 28px; height: 28px;
-        border-radius: 50%;
+        width: 28px; height: 28px; border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
     }
@@ -80,22 +58,42 @@ st.markdown("""
         background: #e8f0fa; border-radius: 3px; overflow: hidden;
     }
     .leader-bar-fill {
-        height: 100%;
+        height: 100%; border-radius: 3px;
         background: linear-gradient(90deg, #4a90d9, #0f2b4c);
-        border-radius: 3px;
     }
 
-    /* Metric cards */
     div[data-testid="stMetric"] {
-        background: #f5f7fb;
-        border: 1px solid #dce3ed;
-        border-radius: 12px;
-        padding: 14px 16px;
+        background: #f5f7fb; border: 1px solid #dce3ed;
+        border-radius: 12px; padding: 14px 16px;
+    }
+
+    .flag-img {
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .trivia-box {
+        background: #f0f5ff;
+        border-left: 4px solid #4a90d9;
+        border-radius: 0 10px 10px 0;
+        padding: 16px 20px;
+        margin-top: 16px;
+        font-size: 14px;
+        color: #1a1a2e;
+        line-height: 1.5;
+    }
+    .trivia-box .trivia-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+        color: #4a90d9;
+        margin-bottom: 6px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- SETUP APIS & DATABASE ---
+# --- SETUP APIS ---
 API_KEY = st.secrets["GEMINI_API_KEY"]
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
@@ -327,6 +325,166 @@ plate_types = {
     "A": "UN Secretariat"
 }
 
+# Organizations (not countries — skip map, use org trivia)
+ORGANIZATIONS = {
+    "Organization of African Unity",
+    "World Bank",
+    "International Organization Staff",
+    "International Monetary Fund",
+    "European Union",
+    "U.S.S.R. (Discontinued)",
+    "South Africa (Discontinued)",
+    "South Yemen (Discontinued)",
+    "East Germany (Discontinued)",
+    "Iraq (Discontinued)",
+}
+
+# Manual overrides for country names that pycountry struggles with
+COUNTRY_NAME_OVERRIDES = {
+    "Ivory Coast": "CI",
+    "Congo, Democratic Republic of the": "CD",
+    "Congo, Republic of": "CG",
+    "North Korea": "KP",
+    "South Korea": "KR",
+    "Syria": "SY",
+    "Myanmar": "MM",
+    "Bolivia": "BO",
+    "Iran": "IR",
+    "Venezuela": "VE",
+    "Vietnam": "VN",
+    "Tanzania": "TZ",
+    "Laos": "LA",
+    "Moldova": "MD",
+    "Hong Kong / Moldova": "MD",
+    "Holy See (Vatican)": "VA",
+    "Macedonia": "MK",
+    "French Caribbean": "GP",
+    "Swaziland": "SZ",
+    "Western Samoa": "WS",
+    "Maledives": "MV",
+    "Diego Garcia": "IO",
+    "Netherlands Antilles": "AN",
+    "Bermuda": "BM",
+    "Sao Tome et Principe": "ST",
+    "Cape Verde": "CV",
+    "Micronesia": "FM",
+    "Guinea-Bissau": "GW",
+    "Bosnia and Herzegovina": "BA",
+    "Trinidad and Tobago": "TT",
+    "St. Lucia": "LC",
+    "St. Kitts and Nevis": "KN",
+    "St. Vincent and the Grenadines": "VC",
+    "Antigua and Barbuda": "AG",
+    "Central African Republic": "CF",
+    "Equatorial Guinea": "GQ",
+    "United Arab Emirates": "AE",
+    "Papua New Guinea": "PG",
+    "Dominican Republic": "DO",
+    "El Salvador": "SV",
+    "Czech Republic": "CZ",
+    "Burkina Faso": "BF",
+    "Sierra Leone": "SL",
+    "South Africa": "ZA",
+    "Sri Lanka": "LK",
+    "Saudi Arabia": "SA",
+    "New Zealand": "NZ",
+    "Marshall Islands": "MH",
+    "Solomon Islands": "SB",
+    "Costa Rica": "CR",
+}
+
+
+def get_iso_codes(country_name):
+    """Return (iso_alpha2, iso_alpha3) for a country name, or (None, None)."""
+    if country_name in ORGANIZATIONS or country_name == "Unknown Code" or country_name == "Unknown":
+        return None, None
+
+    # Check manual overrides first
+    if country_name in COUNTRY_NAME_OVERRIDES:
+        a2 = COUNTRY_NAME_OVERRIDES[country_name]
+        try:
+            c = pycountry.countries.get(alpha_2=a2)
+            return c.alpha_2, c.alpha_3
+        except:
+            return a2, None
+
+    # Try pycountry lookup
+    try:
+        results = pycountry.countries.search_fuzzy(country_name)
+        if results:
+            return results[0].alpha_2, results[0].alpha_3
+    except:
+        pass
+
+    return None, None
+
+
+def get_flag_url(iso2):
+    """Return a flag image URL from flagcdn."""
+    if iso2:
+        return f"https://flagcdn.com/w320/{iso2.lower()}.png"
+    return None
+
+
+def render_world_map(iso3, country_name):
+    """Render a plotly choropleth highlighting one country."""
+    fig = go.Figure(go.Choropleth(
+        locations=[iso3],
+        z=[1],
+        colorscale=[[0, "#4a90d9"], [1, "#4a90d9"]],
+        showscale=False,
+        marker_line_color="#dce3ed",
+        marker_line_width=0.5,
+        hovertext=[country_name],
+        hoverinfo="text",
+    ))
+    fig.update_layout(
+        geo=dict(
+            showframe=False,
+            showcoastlines=True,
+            coastlinecolor="#dce3ed",
+            projection_type="natural earth",
+            landcolor="#f5f7fb",
+            oceancolor="#e8f0fa",
+            showocean=True,
+            showcountries=True,
+            countrycolor="#dce3ed",
+        ),
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=300,
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def get_trivia(name, is_org=False):
+    """Ask Gemini for a single fun trivia fact."""
+    seed = random.randint(1, 10000)
+    if is_org:
+        prompt = f"Give me one surprising and fun trivia fact about the organization '{name}'. Keep it to 1-2 sentences. Be specific and interesting. Random seed: {seed}. Respond with ONLY the fact, no preamble."
+    else:
+        prompt = f"Give me one surprising and fun trivia fact about the country '{name}'. Keep it to 1-2 sentences. Be specific and interesting. Random seed: {seed}. Respond with ONLY the fact, no preamble."
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except:
+        return None
+
+
+# Org flag/logo emoji fallback
+ORG_ICONS = {
+    "World Bank": "🏦",
+    "International Monetary Fund": "💰",
+    "European Union": "🇪🇺",
+    "Organization of African Unity": "🌍",
+    "International Organization Staff": "🏛️",
+    "U.S.S.R. (Discontinued)": "☭",
+    "South Africa (Discontinued)": "🇿🇦",
+    "South Yemen (Discontinued)": "🇾🇪",
+    "East Germany (Discontinued)": "🇩🇪",
+    "Iraq (Discontinued)": "🇮🇶",
+}
+
 
 # --- HELPERS ---
 def record_scan(code, country):
@@ -359,6 +517,53 @@ def get_diplomat_info(plate_text):
     return vehicle_type, country_code, country, is_ambassador
 
 
+def display_result(vehicle_type, code, country, is_ambassador):
+    """Shared result display: metrics + flag + map + trivia."""
+    if is_ambassador:
+        st.balloons()
+        st.success("🌟 You spotted an Ambassador's official vehicle!")
+    else:
+        st.success("✅ Match found!")
+
+    # Metrics row
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Type", vehicle_type)
+    c2.metric("Code", code)
+    c3.metric("Country", country)
+
+    is_org = country in ORGANIZATIONS
+    iso2, iso3 = get_iso_codes(country)
+
+    # Flag + Map row
+    flag_url = get_flag_url(iso2)
+
+    if flag_url and iso3:
+        # Country: flag on left, map on right
+        col_flag, col_map = st.columns([1, 2])
+        with col_flag:
+            st.markdown(f'<img src="{flag_url}" class="flag-img" width="100%">', unsafe_allow_html=True)
+        with col_map:
+            render_world_map(iso3, country)
+    elif flag_url:
+        # Have flag but no map data
+        st.markdown(f'<img src="{flag_url}" class="flag-img" width="200">', unsafe_allow_html=True)
+    elif is_org:
+        # Organization: show icon
+        icon = ORG_ICONS.get(country, "🏛️")
+        st.markdown(f"<div style='font-size:64px; text-align:center; margin:16px 0;'>{icon}</div>", unsafe_allow_html=True)
+
+    # Trivia
+    with st.spinner("Loading a fun fact..."):
+        trivia = get_trivia(country, is_org=is_org)
+    if trivia:
+        st.markdown(f"""
+        <div class="trivia-box">
+            <div class="trivia-label">💡 Did you know?</div>
+            {trivia}
+        </div>
+        """, unsafe_allow_html=True)
+
+
 # --- NAVIGATION ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -381,7 +586,6 @@ if st.session_state.page == "home":
 
     st.markdown("<div style='height:50px'></div>", unsafe_allow_html=True)
 
-    # Centered logo
     col_l, col_c, col_r = st.columns([1, 1, 1])
     with col_c:
         st.image("logo.png", width=130)
@@ -444,15 +648,7 @@ elif st.session_state.page == "scan":
         vehicle_type, code, country, is_ambassador = get_diplomat_info(manual_input)
         if code and country != "Unknown Code":
             record_scan(code, country)
-            if is_ambassador:
-                st.balloons()
-                st.success("🌟 You spotted an Ambassador's official vehicle!")
-            else:
-                st.success("✅ Match found!")
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Type", vehicle_type)
-            c2.metric("Code", code)
-            c3.metric("Country", country)
+            display_result(vehicle_type, code, country, is_ambassador)
         else:
             st.error("Could not recognize a valid diplomatic plate format.")
 
@@ -491,15 +687,7 @@ elif st.session_state.page == "scan":
                     vehicle_type, code, country, is_ambassador = get_diplomat_info(ai_result)
                     if code and country != "Unknown Code":
                         record_scan(code, country)
-                        if is_ambassador:
-                            st.balloons()
-                            st.success("🌟 You spotted an Ambassador's official vehicle!")
-                        else:
-                            st.success("✅ Match found!")
-                        c1, c2, c3 = st.columns(3)
-                        c1.metric("Type", vehicle_type)
-                        c2.metric("Code", code)
-                        c3.metric("Country", country)
+                        display_result(vehicle_type, code, country, is_ambassador)
                     elif code and country == "Unknown Code":
                         st.warning(f"Plate read as '{ai_result}', but the code is not in the database.")
                     else:
@@ -523,7 +711,6 @@ elif st.session_state.page == "leaderboard":
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    # Time filter toggle
     time_filter = st.segmented_control(
         "Period",
         options=["Today", "This Month", "All Time"],
@@ -538,7 +725,6 @@ elif st.session_state.page == "leaderboard":
         if data:
             df = pd.DataFrame(data)
 
-            # Apply time filter
             if "created_at" in df.columns:
                 df["created_at"] = pd.to_datetime(df["created_at"])
                 now = datetime.utcnow()
@@ -575,9 +761,18 @@ elif st.session_state.page == "leaderboard":
                     pct = int((row["Scans"] / max_scans) * 100)
                     badge = "rank-1" if rank == 1 else "rank-2" if rank == 2 else "rank-3" if rank == 3 else "rank-other"
 
+                    # Get flag for leaderboard row
+                    row_iso2, _ = get_iso_codes(row["Country"])
+                    flag_html = ""
+                    if row_iso2:
+                        flag_html = f'<img src="https://flagcdn.com/w40/{row_iso2.lower()}.png" width="24" style="border-radius:2px; vertical-align:middle; margin-right:4px;">'
+                    elif row["Country"] in ORG_ICONS:
+                        flag_html = f'<span style="margin-right:4px;">{ORG_ICONS[row["Country"]]}</span>'
+
                     st.markdown(f"""
                     <div class="leader-row">
                         <div class="rank-badge {badge}">{rank}</div>
+                        {flag_html}
                         <span style="font-size:14px; font-weight:600; color:#1a1a2e; flex:1;">{row['Country']}</span>
                         <div class="leader-bar-bg">
                             <div class="leader-bar-fill" style="width:{pct}%;"></div>
