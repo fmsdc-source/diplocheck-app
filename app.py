@@ -9,128 +9,166 @@ import plotly.graph_objects as go
 import pycountry
 import random
 
-# --- PAGE CONFIG ---
 st.set_page_config(page_title="DiploCheck", page_icon="🌐", layout="centered")
 
-# --- CUSTOM CSS ---
 st.markdown("""
 <style>
     #MainMenu, footer, header {visibility: hidden;}
     div[data-testid="stDecoration"] {display: none;}
+    .stApp { background: #d6e6f0 !important; }
 
-    .stApp {
-        background: #d6e6f0 !important;
-    }
-
-    /* ── PLATE STRIPE (header bar) ── */
-    .plate-stripe-bar {
+    /* ── LANDING PLATE ── */
+    .landing-plate-stripe {
         background: #c42b2b;
         border-radius: 10px 10px 0 0;
-        padding: 12px 24px;
+        padding: 14px 24px;
         text-align: center;
         border: 4px solid #a0afc0;
         border-bottom: none;
         position: relative;
     }
-    .plate-stripe-bar .plate-title {
-        font-size: 16px;
-        font-weight: 800;
-        color: white;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        display: block;
-        margin: 0;
+    .landing-plate-stripe .title {
+        font-size: 18px; font-weight: 800; color: white;
+        letter-spacing: 0.35em; text-transform: uppercase; margin: 0;
     }
-    .plate-stripe-bar .plate-subtitle {
-        font-size: 9px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.85);
-        letter-spacing: 0.18em;
-        text-transform: uppercase;
-        display: block;
-        margin-top: 3px;
-    }
-    .plate-stripe-bar .bolt {
+    .landing-plate-stripe .bolt {
         width: 11px; height: 11px; border-radius: 50%;
         background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
         border: 1px solid #6b7a8d;
         position: absolute; top: 50%; transform: translateY(-50%);
     }
-    .plate-stripe-bar .bolt-l { left: 10px; }
-    .plate-stripe-bar .bolt-r { right: 10px; }
-
-    /* ── PLATE BODY (below stripe) ── */
-    .plate-body-frame {
+    .landing-plate-stripe .bolt-l { left: 10px; }
+    .landing-plate-stripe .bolt-r { right: 10px; }
+    .landing-plate-body {
         background: #f0f2f5;
         border: 4px solid #a0afc0;
         border-top: none;
         border-radius: 0 0 10px 10px;
-        padding: 24px;
+        padding: 28px 24px;
+        text-align: center;
         position: relative;
     }
-    .plate-body-frame .bolt {
+    .landing-plate-body .bolt {
         width: 11px; height: 11px; border-radius: 50%;
         background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
         border: 1px solid #6b7a8d;
         position: absolute;
     }
-    .plate-body-frame .bolt-bl { bottom: 8px; left: 10px; }
-    .plate-body-frame .bolt-br { bottom: 8px; right: 10px; }
+    .landing-plate-body .bolt-bl { bottom: 8px; left: 10px; }
+    .landing-plate-body .bolt-br { bottom: 8px; right: 10px; }
+    .landing-plate-body .plate-text {
+        font-size: 13px; font-weight: 700; color: #0a1628;
+        letter-spacing: 0.15em; text-transform: uppercase; margin: 0;
+    }
+
+    /* ── CARD BUTTONS (landing) ── */
+    .card-btn-wrap .stButton > button {
+        background: white !important;
+        color: #0a1628 !important;
+        border: 1px solid #c0cdd8 !important;
+        border-radius: 14px !important;
+        padding: 36px 16px !important;
+        min-height: 130px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        width: 100%;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+        line-height: 1.4 !important;
+        white-space: pre-line !important;
+    }
+    .card-btn-wrap .stButton > button:hover {
+        border-color: #c42b2b !important;
+        box-shadow: 0 6px 20px rgba(196,43,43,0.12) !important;
+        background: #fefefe !important;
+    }
+    .card-btn-wrap .stButton > button:active {
+        transform: scale(0.98);
+    }
+
+    /* ── SUB-PAGE HEADER ── */
+    .page-title {
+        font-size: 24px; font-weight: 800; color: #0a1628;
+        letter-spacing: 0.08em; margin: 0;
+    }
+    .page-title-bar {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 20px; padding-bottom: 14px;
+        border-bottom: 3px solid #c42b2b;
+    }
+
+    /* ── CARDS ── */
+    .light-card {
+        background: white; border: 1px solid #c0cdd8;
+        border-radius: 12px; padding: 20px 24px; margin-bottom: 14px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .light-card h3 { margin: 0 0 4px; font-size: 16px; color: #0a1628; }
+    .light-card .subtitle { margin: 0 0 12px; font-size: 13px; color: #5a6a7e; }
 
     /* ── RESULT PLATE ── */
+    .result-stripe {
+        background: #c42b2b;
+        border-radius: 10px 10px 0 0;
+        padding: 10px 24px; text-align: center;
+        border: 4px solid #a0afc0; border-bottom: none;
+        position: relative;
+    }
+    .result-stripe .title {
+        font-size: 14px; font-weight: 800; color: white;
+        letter-spacing: 0.3em; text-transform: uppercase; margin: 0;
+    }
+    .result-stripe .bolt {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
+        border: 1px solid #6b7a8d;
+        position: absolute; top: 50%; transform: translateY(-50%);
+    }
+    .result-stripe .bolt-l { left: 8px; }
+    .result-stripe .bolt-r { right: 8px; }
+    .result-body-frame {
+        background: #f0f2f5;
+        border: 4px solid #a0afc0; border-top: none;
+        border-radius: 0 0 10px 10px;
+        padding: 20px 24px; position: relative;
+    }
+    .result-body-frame .bolt {
+        width: 9px; height: 9px; border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
+        border: 1px solid #6b7a8d; position: absolute;
+    }
+    .result-body-frame .bolt-bl { bottom: 6px; left: 8px; }
+    .result-body-frame .bolt-br { bottom: 6px; right: 8px; }
     .result-body {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
+        display: flex; align-items: center;
+        justify-content: space-between; gap: 16px;
     }
-    .result-country {
-        display: flex; align-items: center; gap: 14px;
-    }
+    .result-country { display: flex; align-items: center; gap: 14px; }
     .result-country img {
         width: 44px; border-radius: 4px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
     .result-country .name {
-        font-size: 20px; font-weight: 700;
-        color: #0a1628; margin: 0;
+        font-size: 20px; font-weight: 700; color: #0a1628; margin: 0;
     }
     .result-country .type {
-        font-size: 11px; color: #5a6a7e;
-        text-transform: uppercase; letter-spacing: 0.06em;
-        font-weight: 600; margin: 2px 0 0;
+        font-size: 11px; color: #5a6a7e; text-transform: uppercase;
+        letter-spacing: 0.06em; font-weight: 600; margin: 2px 0 0;
     }
     .result-plate-code {
         font-family: monospace; font-size: 26px; font-weight: 700;
         color: #0a1628; letter-spacing: 0.15em;
     }
 
-    /* ── CARDS ── */
-    .light-card {
-        background: white;
-        border: 1px solid #c0cdd8;
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .light-card h3 { margin: 0 0 4px; font-size: 16px; color: #0a1628; }
-    .light-card .subtitle { margin: 0 0 12px; font-size: 13px; color: #5a6a7e; }
-
     /* ── TRIVIA ── */
     .trivia-box {
-        background: white;
-        border-left: 4px solid #c42b2b;
-        border-radius: 0 10px 10px 0;
-        padding: 16px 20px;
-        margin-top: 16px;
-        font-size: 14px; color: #1a2a3a; line-height: 1.6;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        background: white; border-left: 4px solid #c42b2b;
+        border-radius: 0 10px 10px 0; padding: 16px 20px;
+        margin-top: 16px; font-size: 14px; color: #1a2a3a;
+        line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .trivia-box .trivia-label {
-        font-size: 11px; text-transform: uppercase;
-        letter-spacing: 0.06em; font-weight: 600;
-        color: #c42b2b; margin-bottom: 6px;
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+        font-weight: 600; color: #c42b2b; margin-bottom: 6px;
     }
 
     /* ── OR DIVIDER ── */
@@ -156,34 +194,28 @@ st.markdown("""
     .rank-3 { background: #c4956a; }
     .rank-other { background: #c0cdd8; color: #5a6a7e; }
     .leader-bar-bg {
-        width: 120px; height: 6px;
-        background: #c0cdd8; border-radius: 3px; overflow: hidden;
+        width: 120px; height: 6px; background: #c0cdd8;
+        border-radius: 3px; overflow: hidden;
     }
     .leader-bar-fill {
-        height: 100%; border-radius: 3px;
-        background: #c42b2b;
+        height: 100%; border-radius: 3px; background: #c42b2b;
     }
 
     /* ── METRICS ── */
     div[data-testid="stMetric"] {
-        background: white !important;
-        border: 1px solid #c0cdd8;
+        background: white !important; border: 1px solid #c0cdd8;
         border-radius: 12px; padding: 14px 16px;
     }
     div[data-testid="stMetric"] label { color: #5a6a7e !important; }
     div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #0a1628 !important; }
 
-    /* ── BUTTONS ── */
+    /* ── BUTTONS (default) ── */
     .stButton > button {
         background: white !important; color: #0a1628 !important;
         border: 1px solid #b0c0d0 !important; border-radius: 8px !important;
     }
     .stButton > button:hover {
         background: #e8f0f6 !important; border-color: #c42b2b !important;
-    }
-    .stButton > button[kind="primary"] {
-        background: #c42b2b !important;
-        color: white !important; border: none !important;
     }
 
     /* ── INPUTS ── */
@@ -195,24 +227,6 @@ st.markdown("""
     }
     .stTextInput input:focus { border-color: #c42b2b !important; }
     .stTextInput input::placeholder { color: #8a9bb4 !important; }
-
-    /* ── LANDING OPTIONS ── */
-    .landing-option {
-        background: white;
-        border: 1px solid #c0cdd8;
-        border-radius: 12px;
-        padding: 28px 16px;
-        text-align: center;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .landing-option:hover {
-        border-color: #c42b2b;
-        box-shadow: 0 4px 12px rgba(196,43,43,0.12);
-    }
-    .landing-option h3 {
-        margin: 0 0 4px; font-size: 17px; color: #0a1628; font-weight: 700;
-    }
-    .landing-option p { margin: 0; font-size: 12px; color: #5a6a7e; }
 
     .stSuccess, .stError, .stWarning, .stInfo { border-radius: 8px !important; }
 </style>
@@ -325,7 +339,6 @@ ORG_ICONS = {
 }
 
 
-# --- HELPERS ---
 def get_iso_codes(country_name):
     if country_name in ORGANIZATIONS or country_name in ("Unknown Code","Unknown"):
         return None, None
@@ -386,18 +399,6 @@ def get_diplomat_info(plate_text):
     return vt, cc, country, amb
 
 
-def render_stripe():
-    """Render the red DIPLOCHECK stripe bar as a standalone element."""
-    st.markdown("""
-    <div class="plate-stripe-bar">
-        <div class="bolt bolt-l"></div>
-        <div class="bolt bolt-r"></div>
-        <span class="plate-title">DIPLOCHECK</span>
-        <span class="plate-subtitle">Identify diplomatic license plates in the U.S.</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-
 def display_result(vehicle_type, code, country, is_ambassador, plate_text=""):
     if is_ambassador:
         st.balloons()
@@ -410,7 +411,6 @@ def display_result(vehicle_type, code, country, is_ambassador, plate_text=""):
     flag_url = get_flag_url(iso2)
     display_plate = plate_text.upper().replace(" ","") if plate_text else code
 
-    # Build flag HTML
     flag_html = ""
     if flag_url:
         flag_html = f'<img src="{flag_url}" style="width:44px;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.15);"/>'
@@ -419,19 +419,13 @@ def display_result(vehicle_type, code, country, is_ambassador, plate_text=""):
 
     type_label = ("👑 " + vehicle_type) if is_ambassador else vehicle_type
 
-    # Result stripe
-    st.markdown("""
-    <div class="plate-stripe-bar" style="margin-top:16px;">
+    st.markdown(f"""
+    <div class="result-stripe">
         <div class="bolt bolt-l"></div>
         <div class="bolt bolt-r"></div>
-        <span class="plate-title">DIPLOCHECK</span>
-        <span class="plate-subtitle">Identify diplomatic license plates in the U.S.</span>
+        <span class="title">DIPLOCHECK</span>
     </div>
-    """, unsafe_allow_html=True)
-
-    # Result body
-    result_html = f"""
-    <div class="plate-body-frame">
+    <div class="result-body-frame">
         <div class="bolt bolt-bl"></div>
         <div class="bolt bolt-br"></div>
         <div class="result-body">
@@ -445,15 +439,12 @@ def display_result(vehicle_type, code, country, is_ambassador, plate_text=""):
             <div class="result-plate-code">{display_plate}</div>
         </div>
     </div>
-    """
-    st.markdown(result_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    # World map
     if iso3:
         st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
         render_world_map(iso3, country)
 
-    # Trivia
     with st.spinner("Loading a fun fact..."):
         trivia = get_trivia(country, is_org=is_org)
     if trivia:
@@ -481,43 +472,32 @@ if st.session_state.page == "home":
 
     st.markdown("<div style='height:50px'></div>", unsafe_allow_html=True)
 
-    # Plate stripe
+    # License plate
     st.markdown("""
-    <div class="plate-stripe-bar">
+    <div class="landing-plate-stripe">
         <div class="bolt bolt-l"></div>
         <div class="bolt bolt-r"></div>
-        <span class="plate-title">DIPLOCHECK</span>
-        <span class="plate-subtitle">Identify diplomatic license plates in the U.S.</span>
+        <span class="title">DIPLOCHECK</span>
     </div>
-    """, unsafe_allow_html=True)
-
-    # Plate body with landing options inside
-    st.markdown("""
-    <div class="plate-body-frame">
+    <div class="landing-plate-body">
         <div class="bolt bolt-bl"></div>
         <div class="bolt bolt-br"></div>
-        <div style="display:flex; gap:16px;">
-            <div class="landing-option" style="flex:1;">
-                <div style="font-size:32px; margin-bottom:10px;">🔍</div>
-                <h3>Check a plate</h3>
-                <p>Type or snap a diplomatic plate</p>
-            </div>
-            <div class="landing-option" style="flex:1;">
-                <div style="font-size:32px; margin-bottom:10px;">🏆</div>
-                <h3>Leaderboard</h3>
-                <p>See the most spotted nations</p>
-            </div>
-        </div>
+        <p class="plate-text">Identify diplomatic license plates in the U.S.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Buttons below the plate
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
+
+    # Clickable card buttons
     col1, col2 = st.columns(2, gap="medium")
     with col1:
-        st.button("Check a Plate →", on_click=go_scan, use_container_width=True, type="primary")
+        st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
+        st.button("🔍\n\nCheck a Plate", on_click=go_scan, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     with col2:
-        st.button("Leaderboard →", on_click=go_leaderboard, use_container_width=True, type="primary")
+        st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
+        st.button("🏆\n\nLeaderboard", on_click=go_leaderboard, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -529,9 +509,11 @@ elif st.session_state.page == "scan":
     with col_back:
         st.button("←", on_click=go_home, help="Back to home")
 
-    render_stripe()
-
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="page-title-bar">
+        <span class="page-title">Check a Plate</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("""<div class="light-card"><h3>⌨️ Type a plate number</h3><p class="subtitle">Letters and numbers — we'll figure out the format</p></div>""", unsafe_allow_html=True)
     manual_input = st.text_input("Plate", placeholder="e.g. DAF 1234, AXX 0001, or 1234 AFD", label_visibility="collapsed")
@@ -591,9 +573,11 @@ elif st.session_state.page == "leaderboard":
     with col_back:
         st.button("←", on_click=go_home, help="Back to home")
 
-    render_stripe()
-
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="page-title-bar">
+        <span class="page-title">Leaderboard</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     time_filter = st.segmented_control("Period", options=["Today","This Month","All Time"], default="All Time", label_visibility="collapsed")
 
@@ -615,14 +599,11 @@ elif st.session_state.page == "leaderboard":
             else:
                 lb = df["country"].value_counts().reset_index()
                 lb.columns = ["Country","Scans"]
-                ts = int(lb["Scans"].sum())
-                tc = len(lb)
-                top = lb.iloc[0]["Country"]
 
                 m1,m2,m3 = st.columns(3)
-                m1.metric("Total Scans", ts)
-                m2.metric("Countries Spotted", tc)
-                m3.metric("Most Spotted", top)
+                m1.metric("Total Scans", int(lb["Scans"].sum()))
+                m2.metric("Countries Spotted", len(lb))
+                m3.metric("Most Spotted", lb.iloc[0]["Country"])
 
                 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
                 mx = int(lb["Scans"].max())
