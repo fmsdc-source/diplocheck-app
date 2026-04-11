@@ -482,7 +482,7 @@ if st.session_state.page == "home":
     <div class="landing-plate-body">
         <div class="bolt bolt-bl"></div>
         <div class="bolt bolt-br"></div>
-        <p class="plate-text">Identify diplomatic license plates in the U.S.</p>
+        <p class="plate-text">Identify the country behind diplomatic license plates</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -492,11 +492,11 @@ if st.session_state.page == "home":
     col1, col2 = st.columns(2, gap="medium")
     with col1:
         st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
-        st.button("🔍\n\nCheck a Plate", on_click=go_scan, use_container_width=True)
+        st.button("🔍\n\ntype or snap a diplomatic plate", on_click=go_scan, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
     with col2:
         st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
-        st.button("🏆\n\nLeaderboard", on_click=go_leaderboard, use_container_width=True)
+        st.button("🏆\n\nsee the most spotted countries", on_click=go_leaderboard, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -630,7 +630,7 @@ elif st.session_state.page == "leaderboard":
                     """, unsafe_allow_html=True)
 
                 st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-                if st.button("🔄 Refresh"): st.rerun()
+                if st.button("Refresh"): st.rerun()
         else:
             st.info("No plates have been scanned yet. Be the first!")
     except Exception as e:
