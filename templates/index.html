@@ -1,12 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiploCheck</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #d6e6f0;
+    --bg-light: #e4eff7;
+    --card: #ffffff;
+    --plate-body: #f0f2f5;
+    --red: #c42b2b;
+    --red-dark: #a02222;
+    --navy: #0a1628;
+    --text: #0a1628;
+    --text-muted: #5a6a7e;
+    --border: #b8c8d8;
+    --border-light: #d0dce6;
+    --gold: #d4a843;
+    --silver: #8a9bb4;
+    --bronze: #c4956a;
+    --font: 'Outfit', -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+}
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-DIPLOCHECK
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
 
+/* ── PAGES ── */
+.page {
+    display: none;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+.page.active {
+    display: block;
+}
+.page.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
 
-IDENTIFY DIPLOMATIC LICENSE PLATES IN THE U.S.
-🔍
-Check a Plate
-Type or snap a diplomatic plate
-🏆
-Leaderboard
-See the most spotted nations
+/* ── LICENSE PLATE (landing) ── */
+.plate {
+    margin-top: 60px;
+    border: 4px solid #a0afc0;
+    border-radius: 14px;
+    background: #7a8a9c;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    overflow: hidden;
+    padding: 4px;
+}
+.plate-inner {
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--plate-body);
+    position: relative;
+}
+.plate-stripe {
+    background: var(--red);
+    padding: 16px 24px;
+    text-align: center;
+    position: relative;
+}
+.plate-stripe h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+}
+.bolt {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #d8e0ea, #8a9bb4);
+    border: 1px solid #6b7a8d;
+    position: absolute;
+}
+.plate-stripe .bolt { top: 50%; transform: translateY(-50%); }
+.bolt-tl { top: 8px !important; left: 10px; transform: none !important; }
+.bolt-tr { top: 8px !important; right: 10px; transform: none !important; }
+.bolt-bl { bottom: 8px; left: 10px; }
+.bolt-br { bottom: 8px; right: 10px; }
+.bolt-sl { left: 12px; }
+.bolt-sr { right: 12px; }
+
+.plate-body {
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+}
+.plate-body .tagline {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* ── LANDING CARDS ── */
+.landing-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 28px;
+    padding-bottom: 60px;
+}
+.landing-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 32px 16px 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+.landing-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--red);
+    transform: scaleX(0);
+    transition: transform 0.25s ease;
+}
+.landing-card:hover {
+    border-color: var(--red);
+    box-shadow: 0 8px 24px rgba(196,43,43,0.1);
+    transform: translateY(-2px);
+}
+.landing-card:hover::after {
+    transform: scaleX(1);
+}
+.landing-card:active {
+    transform: translateY(0) scale(0.98);
+}
+.landing-card .icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+    display: block;
+}
+.landing-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+.landing-card p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* ── SUB-PAGE HEADER ── */
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 32px 0 20px;
+    border-bottom: 3px solid var(--red);
+    margin-bottom: 24px;
+}
+.back-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.back-btn:hover {
+    border-color: var(--red);
+    color: var(--red);
+}
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+/* ── INPUT CARD ── */
+.input-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.input-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+}
+.input-card .desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+.input-row {
+    display: flex;
+    gap: 10px;
+}
+.plate-input {
+    flex: 1;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 2px solid var(--border-light);
+    border-radius: 10px;
+    background: var(--bg-light);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+}
+.plate-input:focus {
+    border-color: var(--red);
+}
+.plate-input::placeholder {
+    color: var(--silver);
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-weight: 400;
+}
+.lookup-btn {
+    padding: 14px 24px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.lookup-btn:hover { background: var(--red-dark); }
+.lookup-btn:active { transform: scale(0.97); }
+.lookup-btn:disabled {
+    opacity: 0.6; cursor: not-allowed;
+}
+
+/* ── DIVIDER ── */
+.or-divider {
+    display: flex; align-items: center; gap: 16px;
+    color: var(--text-muted); font-size: 13px; font-weight: 500;
+    margin: 8px 0;
+}
+.or-divider .line { flex: 1; height: 1px; background: var(--border-light); }
+
+/* ── FILE UPLOAD ── */
+.upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-light);
+}
+.upload-zone:hover {
+    border-color: var(--red);
+    background: #f0e8e8;
+}
+.upload-zone .upload-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+.upload-zone p { font-size: 13px; color: var(--text-muted); }
+.upload-zone .formats { font-size: 11px; color: var(--silver); margin-top: 4px; }
+.upload-zone input { display: none; }
+.upload-preview {
+    display: none;
+    margin-top: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+}
+.upload-preview img {
+    width: 100%;
+    display: block;
+}
+
+/* ── RESULT PLATE ── */
+.result-area {
+    margin-top: 20px;
+    display: none;
+}
+.result-area.show { display: block; }
+
+.result-plate {
+    border: 4px solid #a0afc0;
+    border-radius: 14px;
+    background: #7a8a9c;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+    padding: 4px;
+    animation: slideUp 0.4s ease;
+}
+.result-plate-inner {
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--plate-body);
+    position: relative;
+}
+.result-stripe {
+    background: var(--red);
+    padding: 10px 24px;
+    text-align: center;
+    position: relative;
+}
+.result-stripe span {
+    font-family: var(--mono);
+    font-size: 13px; font-weight: 800;
+    color: white; letter-spacing: 0.3em;
+    text-transform: uppercase;
+}
+.result-body {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: relative;
+}
+.result-left {
+    display: flex; align-items: center; gap: 14px;
+}
+.result-flag {
+    width: 52px; border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.result-org-icon {
+    font-size: 40px;
+}
+.result-info h4 {
+    font-size: 20px; font-weight: 700; color: var(--text);
+}
+.result-info p {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600; margin-top: 2px;
+}
+.result-code {
+    font-family: var(--mono);
+    font-size: 24px; font-weight: 800;
+    color: var(--text); letter-spacing: 0.15em;
+}
+.ambassador-badge {
+    display: inline-block;
+    background: var(--gold);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    animation: pulse 2s ease infinite;
+}
+
+/* ── TRIVIA ── */
+.trivia-card {
+    background: var(--card);
+    border-left: 4px solid var(--red);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-top: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    animation: slideUp 0.5s ease 0.15s both;
+}
+.trivia-card .label {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 700;
+    color: var(--red); margin-bottom: 6px;
+}
+.trivia-card .fact {
+    font-size: 14px; line-height: 1.6; color: var(--text);
+}
+
+/* ── ERROR ── */
+.error-msg {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: #991b1b;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 16px;
+    display: none;
+}
+.error-msg.show { display: block; animation: slideUp 0.3s ease; }
+
+/* ── LOADING ── */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+.loading.show { display: block; }
+.loading .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+}
+
+/* ── LEADERBOARD ── */
+.filter-pills {
+    display: flex; gap: 8px; margin-bottom: 20px;
+}
+.filter-pill {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-family: var(--font);
+    font-size: 13px; font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.filter-pill:hover { border-color: var(--red); color: var(--text); }
+.filter-pill.active {
+    background: var(--red); color: white;
+    border-color: var(--red);
+}
+
+.metrics-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.metric-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+.metric-card .label {
+    font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    font-weight: 600;
+}
+.metric-card .value {
+    font-size: 22px; font-weight: 800; color: var(--text);
+    margin-top: 4px;
+}
+
+.leader-list {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 8px 20px;
+    margin-bottom: 40px;
+}
+.leader-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+.leader-row:last-child { border-bottom: none; }
+.rank-badge {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+}
+.rank-1 { background: var(--gold); }
+.rank-2 { background: var(--silver); }
+.rank-3 { background: var(--bronze); }
+.rank-other { background: var(--border-light); color: var(--text-muted); }
+.leader-flag { width: 24px; border-radius: 2px; }
+.leader-name { flex: 1; font-size: 14px; font-weight: 600; }
+.leader-bar {
+    width: 100px; height: 6px; background: var(--bg-light);
+    border-radius: 3px; overflow: hidden;
+}
+.leader-bar-fill {
+    height: 100%; border-radius: 3px; background: var(--red);
+    transition: width 0.6s ease;
+}
+.leader-count {
+    font-size: 14px; font-weight: 700; min-width: 28px; text-align: right;
+}
+
+.empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--text-muted); font-size: 14px;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+    .result-body { flex-direction: column; text-align: center; }
+    .result-left { justify-content: center; }
+    .result-code { font-size: 20px; }
+    .metrics-row { grid-template-columns: 1fr; }
+    .landing-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ LANDING PAGE ═══════ -->
+<div class="page active" id="page-home">
+    <div class="plate">
+        <div class="plate-inner">
+            <div class="plate-stripe">
+                <div class="bolt bolt-sl"></div>
+                <div class="bolt bolt-sr"></div>
+                <h1>DiploCheck</h1>
+            </div>
+            <div class="plate-body">
+                <div class="bolt bolt-bl"></div>
+                <div class="bolt bolt-br"></div>
+                <p class="tagline">Identify diplomatic license plates in the U.S.</p>
+            </div>
+        </div>
+    </div>
+    <div class="landing-cards">
+        <div class="landing-card" onclick="showPage('scan')">
+            <span class="icon">🔍</span>
+            <h3>Check a Plate</h3>
+            <p>Type or snap a diplomatic plate</p>
+        </div>
+        <div class="landing-card" onclick="showPage('leaderboard')">
+            <span class="icon">🏆</span>
+            <h3>Leaderboard</h3>
+            <p>See the most spotted nations</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════ SCAN PAGE ═══════ -->
+<div class="page" id="page-scan">
+    <div class="page-header">
+        <button class="back-btn" onclick="showPage('home')">←</button>
+        <h2>Check a Plate</h2>
+    </div>
+
+    <div class="input-card">
+        <h3>⌨️ Type a plate number</h3>
+        <p class="desc">Letters and numbers — we'll figure out the format</p>
+        <div class="input-row">
+            <input type="text" class="plate-input" id="plateInput"
+                   placeholder="e.g. DAF 1234" autocomplete="off" spellcheck="false">
+            <button class="lookup-btn" id="lookupBtn" onclick="lookupPlate()">Look up</button>
+        </div>
+    </div>
+
+    <div class="or-divider"><div class="line"></div>or<div class="line"></div></div>
+
+    <div class="input-card">
+        <h3>📷 Upload a photo</h3>
+        <p class="desc">Snap a plate and let AI read it for you</p>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📤</div>
+            <p>Click to upload or drag & drop</p>
+            <p class="formats">JPG, JPEG, PNG</p>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
+        </div>
+        <div class="upload-preview" id="uploadPreview">
+            <img id="previewImg" src="" alt="Preview">
+        </div>
+    </div>
+
+    <div class="loading" id="scanLoading">
+        <div class="spinner"></div>
+        <p>Analyzing plate...</p>
+    </div>
+    <div class="error-msg" id="scanError"></div>
+    <div class="result-area" id="scanResult"></div>
+</div>
+
+<!-- ═══════ LEADERBOARD PAGE ═══════ -->
+<div class="page" id="page-leaderboard">
+    <div class="page-header">
+        <button class="back-btn" onclick="showPage('home')">←</button>
+        <h2>Leaderboard</h2>
+    </div>
+
+    <div class="filter-pills">
+        <button class="filter-pill" data-period="today" onclick="filterLeaderboard('today', this)">Today</button>
+        <button class="filter-pill" data-period="month" onclick="filterLeaderboard('month', this)">This Month</button>
+        <button class="filter-pill active" data-period="all" onclick="filterLeaderboard('all', this)">All Time</button>
+    </div>
+
+    <div class="loading" id="lbLoading">
+        <div class="spinner"></div>
+        <p>Loading leaderboard...</p>
+    </div>
+    <div id="lbContent"></div>
+</div>
+
+<script>
+// ── PAGE NAVIGATION ──
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active', 'visible');
+    });
+    const page = document.getElementById('page-' + id);
+    page.classList.add('active');
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => page.classList.add('visible'));
+    });
+    if (id === 'leaderboard') loadLeaderboard('all');
+}
+
+// Show home on load
+requestAnimationFrame(() => {
+    document.getElementById('page-home').classList.add('visible');
+});
+
+// ── PLATE LOOKUP ──
+const plateInput = document.getElementById('plateInput');
+plateInput.addEventListener('keydown', e => { if (e.key === 'Enter') lookupPlate(); });
+
+async function lookupPlate() {
+    const text = plateInput.value.trim();
+    if (!text) return;
+
+    const btn = document.getElementById('lookupBtn');
+    const loading = document.getElementById('scanLoading');
+    const error = document.getElementById('scanError');
+    const result = document.getElementById('scanResult');
+
+    btn.disabled = true;
+    loading.classList.add('show');
+    error.classList.remove('show');
+    result.classList.remove('show');
+    result.innerHTML = '';
+
+    try {
+        const resp = await fetch('/api/lookup', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({plate: text})
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            error.textContent = data.error;
+            error.classList.add('show');
+        } else {
+            renderResult(data, result);
+        }
+    } catch(e) {
+        error.textContent = 'Connection error. Please try again.';
+        error.classList.add('show');
+    }
+    btn.disabled = false;
+    loading.classList.remove('show');
+}
+
+// ── IMAGE UPLOAD ──
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', handleUpload);
+
+async function handleUpload() {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('uploadPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+
+    const loading = document.getElementById('scanLoading');
+    const error = document.getElementById('scanError');
+    const result = document.getElementById('scanResult');
+
+    loading.classList.add('show');
+    error.classList.remove('show');
+    result.classList.remove('show');
+    result.innerHTML = '';
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        const resp = await fetch('/api/scan-image', {method: 'POST', body: formData});
+        const data = await resp.json();
+        if (!resp.ok) {
+            error.textContent = data.error;
+            error.classList.add('show');
+        } else {
+            renderResult(data, result);
+        }
+    } catch(e) {
+        error.textContent = 'Connection error. Please try again.';
+        error.classList.add('show');
+    }
+    loading.classList.remove('show');
+}
+
+// Drag and drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--red)'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.style.borderColor = '';
+    if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        handleUpload();
+    }
+});
+
+// ── RENDER RESULT ──
+function renderResult(data, container) {
+    let flagHtml = '';
+    if (data.iso2) {
+        flagHtml = `<img class="result-flag" src="https://flagcdn.com/w160/${data.iso2}.png" alt="${data.country} flag">`;
+    } else if (data.org_icon) {
+        flagHtml = `<span class="result-org-icon">${data.org_icon}</span>`;
+    }
+
+    let ambBadge = data.ambassador ? '<div class="ambassador-badge">👑 AMBASSADOR</div>' : '';
+
+    container.innerHTML = `
+        ${ambBadge}
+        <div class="result-plate">
+            <div class="result-plate-inner">
+                <div class="result-stripe">
+                    <div class="bolt bolt-sl"></div>
+                    <div class="bolt bolt-sr"></div>
+                    <span>DIPLOCHECK</span>
+                </div>
+                <div class="result-body">
+                    <div class="bolt bolt-bl"></div>
+                    <div class="bolt bolt-br"></div>
+                    <div class="result-left">
+                        ${flagHtml}
+                        <div class="result-info">
+                            <h4>${data.country}</h4>
+                            <p>${data.type}</p>
+                        </div>
+                    </div>
+                    <div class="result-code">${data.plate}</div>
+                </div>
+            </div>
+        </div>
+        ${data.trivia ? `
+        <div class="trivia-card">
+            <div class="label">💡 Did you know?</div>
+            <div class="fact">${data.trivia}</div>
+        </div>
+        ` : ''}
+    `;
+    container.classList.add('show');
+}
+
+// ── LEADERBOARD ──
+let currentPeriod = 'all';
+
+function filterLeaderboard(period, btn) {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    loadLeaderboard(period);
+}
+
+async function loadLeaderboard(period) {
+    currentPeriod = period;
+    const loading = document.getElementById('lbLoading');
+    const content = document.getElementById('lbContent');
+
+    loading.classList.add('show');
+    content.innerHTML = '';
+
+    try {
+        const resp = await fetch(`/api/leaderboard?period=${period}`);
+        const data = await resp.json();
+
+        if (!data.entries || data.entries.length === 0) {
+            content.innerHTML = '<div class="empty-state">No scans recorded yet. Be the first!</div>';
+            loading.classList.remove('show');
+            return;
+        }
+
+        const maxScans = data.entries[0].scans;
+
+        let metricsHtml = `
+        <div class="metrics-row">
+            <div class="metric-card"><div class="label">Total Scans</div><div class="value">${data.total_scans}</div></div>
+            <div class="metric-card"><div class="label">Countries</div><div class="value">${data.total_countries}</div></div>
+            <div class="metric-card"><div class="label">Most Spotted</div><div class="value" style="font-size:14px;">${data.top_country}</div></div>
+        </div>
+        `;
+
+        let rowsHtml = data.entries.map((entry, i) => {
+            const rank = i + 1;
+            const pct = Math.round((entry.scans / maxScans) * 100);
+            const badgeClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+
+            let flagHtml = '';
+            if (entry.iso2) {
+                flagHtml = `<img class="leader-flag" src="https://flagcdn.com/w40/${entry.iso2}.png" alt="">`;
+            } else if (entry.org_icon) {
+                flagHtml = `<span style="font-size:16px;">${entry.org_icon}</span>`;
+            }
+
+            return `
+            <div class="leader-row">
+                <div class="rank-badge ${badgeClass}">${rank}</div>
+                ${flagHtml}
+                <span class="leader-name">${entry.country}</span>
+                <div class="leader-bar"><div class="leader-bar-fill" style="width:${pct}%"></div></div>
+                <span class="leader-count">${entry.scans}</span>
+            </div>`;
+        }).join('');
+
+        content.innerHTML = metricsHtml + '<div class="leader-list">' + rowsHtml + '</div>';
+    } catch(e) {
+        content.innerHTML = '<div class="empty-state">Could not load leaderboard.</div>';
+    }
+    loading.classList.remove('show');
+}
+</script>
+</body>
+</html>
