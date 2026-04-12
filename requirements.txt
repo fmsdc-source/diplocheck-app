@@ -1,7 +1,5 @@
-streamlit
+flask
+gunicorn
 Pillow
 google-generativeai
 supabase
-plotly
-pycountry
-pandas

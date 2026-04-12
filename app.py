@@ -1,244 +1,25 @@
-import streamlit as st
+import os
+import re
+import random
+import base64
+from io import BytesIO
+from datetime import datetime, timedelta
+
+from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 from PIL import Image
-import re
-from datetime import datetime
 from supabase import create_client, Client
-import pandas as pd
-import plotly.graph_objects as go
-import pycountry
-import random
 
-st.set_page_config(page_title="DiploCheck", page_icon="🌐", layout="centered")
+app = Flask(__name__)
 
-st.markdown("""
-<style>
-    #MainMenu, footer, header {visibility: hidden;}
-    div[data-testid="stDecoration"] {display: none;}
-    .stApp { background: #d6e6f0 !important; }
+# --- CONFIG (env vars for Cloud Run, fallback to .env) ---
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
-    /* ── LANDING PLATE ── */
-    .landing-plate-stripe {
-        background: #c42b2b;
-        border-radius: 10px 10px 0 0;
-        padding: 14px 24px;
-        text-align: center;
-        border: 4px solid #a0afc0;
-        border-bottom: none;
-        position: relative;
-    }
-    .landing-plate-stripe .title {
-        font-size: 18px; font-weight: 800; color: white;
-        letter-spacing: 0.35em; text-transform: uppercase; margin: 0;
-    }
-    .landing-plate-stripe .bolt {
-        width: 11px; height: 11px; border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
-        border: 1px solid #6b7a8d;
-        position: absolute; top: 50%; transform: translateY(-50%);
-    }
-    .landing-plate-stripe .bolt-l { left: 10px; }
-    .landing-plate-stripe .bolt-r { right: 10px; }
-    .landing-plate-body {
-        background: #f0f2f5;
-        border: 4px solid #a0afc0;
-        border-top: none;
-        border-radius: 0 0 10px 10px;
-        padding: 28px 24px;
-        text-align: center;
-        position: relative;
-    }
-    .landing-plate-body .bolt {
-        width: 11px; height: 11px; border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
-        border: 1px solid #6b7a8d;
-        position: absolute;
-    }
-    .landing-plate-body .bolt-bl { bottom: 8px; left: 10px; }
-    .landing-plate-body .bolt-br { bottom: 8px; right: 10px; }
-    .landing-plate-body .plate-text {
-        font-size: 13px; font-weight: 700; color: #0a1628;
-        letter-spacing: 0.15em; text-transform: uppercase; margin: 0;
-    }
-
-    /* ── CARD BUTTONS (landing) ── */
-    .card-btn-wrap .stButton > button {
-        background: white !important;
-        color: #0a1628 !important;
-        border: 1px solid #c0cdd8 !important;
-        border-radius: 14px !important;
-        padding: 36px 16px !important;
-        min-height: 130px !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        width: 100%;
-        transition: border-color 0.2s, box-shadow 0.2s !important;
-        line-height: 1.4 !important;
-        white-space: pre-line !important;
-    }
-    .card-btn-wrap .stButton > button:hover {
-        border-color: #c42b2b !important;
-        box-shadow: 0 6px 20px rgba(196,43,43,0.12) !important;
-        background: #fefefe !important;
-    }
-    .card-btn-wrap .stButton > button:active {
-        transform: scale(0.98);
-    }
-
-    /* ── SUB-PAGE HEADER ── */
-    .page-title {
-        font-size: 24px; font-weight: 800; color: #0a1628;
-        letter-spacing: 0.08em; margin: 0;
-    }
-    .page-title-bar {
-        display: flex; align-items: center; gap: 12px;
-        margin-bottom: 20px; padding-bottom: 14px;
-        border-bottom: 3px solid #c42b2b;
-    }
-
-    /* ── CARDS ── */
-    .light-card {
-        background: white; border: 1px solid #c0cdd8;
-        border-radius: 12px; padding: 20px 24px; margin-bottom: 14px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .light-card h3 { margin: 0 0 4px; font-size: 16px; color: #0a1628; }
-    .light-card .subtitle { margin: 0 0 12px; font-size: 13px; color: #5a6a7e; }
-
-    /* ── RESULT PLATE ── */
-    .result-stripe {
-        background: #c42b2b;
-        border-radius: 10px 10px 0 0;
-        padding: 10px 24px; text-align: center;
-        border: 4px solid #a0afc0; border-bottom: none;
-        position: relative;
-    }
-    .result-stripe .title {
-        font-size: 14px; font-weight: 800; color: white;
-        letter-spacing: 0.3em; text-transform: uppercase; margin: 0;
-    }
-    .result-stripe .bolt {
-        width: 9px; height: 9px; border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
-        border: 1px solid #6b7a8d;
-        position: absolute; top: 50%; transform: translateY(-50%);
-    }
-    .result-stripe .bolt-l { left: 8px; }
-    .result-stripe .bolt-r { right: 8px; }
-    .result-body-frame {
-        background: #f0f2f5;
-        border: 4px solid #a0afc0; border-top: none;
-        border-radius: 0 0 10px 10px;
-        padding: 20px 24px; position: relative;
-    }
-    .result-body-frame .bolt {
-        width: 9px; height: 9px; border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #d0d8e4, #8a9bb4);
-        border: 1px solid #6b7a8d; position: absolute;
-    }
-    .result-body-frame .bolt-bl { bottom: 6px; left: 8px; }
-    .result-body-frame .bolt-br { bottom: 6px; right: 8px; }
-    .result-body {
-        display: flex; align-items: center;
-        justify-content: space-between; gap: 16px;
-    }
-    .result-country { display: flex; align-items: center; gap: 14px; }
-    .result-country img {
-        width: 44px; border-radius: 4px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    .result-country .name {
-        font-size: 20px; font-weight: 700; color: #0a1628; margin: 0;
-    }
-    .result-country .type {
-        font-size: 11px; color: #5a6a7e; text-transform: uppercase;
-        letter-spacing: 0.06em; font-weight: 600; margin: 2px 0 0;
-    }
-    .result-plate-code {
-        font-family: monospace; font-size: 26px; font-weight: 700;
-        color: #0a1628; letter-spacing: 0.15em;
-    }
-
-    /* ── TRIVIA ── */
-    .trivia-box {
-        background: white; border-left: 4px solid #c42b2b;
-        border-radius: 0 10px 10px 0; padding: 16px 20px;
-        margin-top: 16px; font-size: 14px; color: #1a2a3a;
-        line-height: 1.6; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    }
-    .trivia-box .trivia-label {
-        font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-        font-weight: 600; color: #c42b2b; margin-bottom: 6px;
-    }
-
-    /* ── OR DIVIDER ── */
-    .or-divider {
-        display: flex; align-items: center; gap: 16px;
-        color: #5a6a7e; font-size: 13px; font-weight: 500; margin: 8px 0;
-    }
-    .or-divider .line { flex: 1; height: 1px; background: #b0c0d0; }
-
-    /* ── LEADERBOARD ── */
-    .leader-row {
-        display: flex; align-items: center; gap: 14px;
-        padding: 12px 0; border-bottom: 1px solid #c0cdd8;
-    }
-    .leader-row:last-child { border-bottom: none; }
-    .rank-badge {
-        width: 28px; height: 28px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
-    }
-    .rank-1 { background: #d4a843; }
-    .rank-2 { background: #8a9bb4; }
-    .rank-3 { background: #c4956a; }
-    .rank-other { background: #c0cdd8; color: #5a6a7e; }
-    .leader-bar-bg {
-        width: 120px; height: 6px; background: #c0cdd8;
-        border-radius: 3px; overflow: hidden;
-    }
-    .leader-bar-fill {
-        height: 100%; border-radius: 3px; background: #c42b2b;
-    }
-
-    /* ── METRICS ── */
-    div[data-testid="stMetric"] {
-        background: white !important; border: 1px solid #c0cdd8;
-        border-radius: 12px; padding: 14px 16px;
-    }
-    div[data-testid="stMetric"] label { color: #5a6a7e !important; }
-    div[data-testid="stMetric"] [data-testid="stMetricValue"] { color: #0a1628 !important; }
-
-    /* ── BUTTONS (default) ── */
-    .stButton > button {
-        background: white !important; color: #0a1628 !important;
-        border: 1px solid #b0c0d0 !important; border-radius: 8px !important;
-    }
-    .stButton > button:hover {
-        background: #e8f0f6 !important; border-color: #c42b2b !important;
-    }
-
-    /* ── INPUTS ── */
-    .stTextInput input {
-        background: white !important; color: #0a1628 !important;
-        border: 1.5px solid #b0c0d0 !important; border-radius: 8px !important;
-        font-family: monospace !important; letter-spacing: 0.12em !important;
-        text-transform: uppercase !important;
-    }
-    .stTextInput input:focus { border-color: #c42b2b !important; }
-    .stTextInput input::placeholder { color: #8a9bb4 !important; }
-
-    .stSuccess, .stError, .stWarning, .stInfo { border-radius: 8px !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# --- APIS ---
-API_KEY = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
-supabase_url = st.secrets["supabase"]["URL"]
-supabase_key = st.secrets["supabase"]["KEY"]
-supabase: Client = create_client(supabase_url, supabase_key)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- OFM CODES ---
 ofm_codes = {
@@ -308,7 +89,7 @@ ORGANIZATIONS = {
     "East Germany (Discontinued)","Iraq (Discontinued)",
 }
 
-COUNTRY_NAME_OVERRIDES = {
+COUNTRY_ISO = {
     "Ivory Coast":"CI","Congo, Democratic Republic of the":"CD",
     "Congo, Republic of":"CG","North Korea":"KP","South Korea":"KR",
     "Syria":"SY","Myanmar":"MM","Bolivia":"BO","Iran":"IR",
@@ -327,311 +108,193 @@ COUNTRY_NAME_OVERRIDES = {
     "Burkina Faso":"BF","Sierra Leone":"SL","South Africa":"ZA",
     "Sri Lanka":"LK","Saudi Arabia":"SA","New Zealand":"NZ",
     "Marshall Islands":"MH","Solomon Islands":"SB","Costa Rica":"CR",
+    "Japan":"JP","Madagascar":"MG","Panama":"PA","Uganda":"UG",
+    "Israel":"IL","Cambodia":"KH","Ethiopia":"ET","Afghanistan":"AF",
+    "Bhutan":"BT","Botswana":"BW","Cameroon":"CM","Burundi":"BI",
+    "China":"CN","Colombia":"CO","Cuba":"CU","Cyprus":"CY",
+    "Ecuador":"EC","France":"FR","Greece":"GR","India":"IN",
+    "Denmark":"DK","Bangladesh":"BD","Slovakia":"SK","Palau":"PW",
+    "Ireland":"IE","Lebanon":"LB","Kenya":"KE","Liberia":"LR",
+    "Libya":"LY","Malta":"MT","Morocco":"MA","Philippines":"PH",
+    "Netherlands":"NL","Qatar":"QA","Sweden":"SE","Ukraine":"UA",
+    "Zambia":"ZM","Turkey":"TR","Albania":"AL","Vanuatu":"VU",
+    "Tonga":"TO","Mongolia":"MN","Belgium":"BE","Guatemala":"GT",
+    "Benin":"BJ","Haiti":"HT","Honduras":"HN","Kuwait":"KW",
+    "Mauritius":"MU","Nigeria":"NG","Portugal":"PT","Somalia":"SO",
+    "Chad":"TD","Tunisia":"TN","Togo":"TG","Slovenia":"SI",
+    "Monaco":"MC","Eritrea":"ER","Hungary":"HU","Lithuania":"LT",
+    "Fiji":"FJ","Jordan":"JO","Jamaica":"JM","Gabon":"GA",
+    "Luxembourg":"LU","Malaysia":"MY","Mexico":"MX","Namibia":"NA",
+    "Seychelles":"SC","Sudan":"SD","Germany":"DE","Djibouti":"DJ",
+    "Comoros":"KM","Bahamas":"BS","Oman":"OM","Paraguay":"PY",
+    "Romania":"RO","Angola":"AO","Austria":"AT","Barbados":"BB",
+    "Belize":"BZ","Belarus":"BY","Norway":"NO","Chile":"CL",
+    "Brunei":"BN","Argentina":"AR","Zimbabwe":"ZW","Yemen":"YE",
+    "Bulgaria":"BG","Latvia":"LV","Lesotho":"LS","Malawi":"MW",
+    "Mozambique":"MZ","Nicaragua":"NI","Niger":"NE","Poland":"PL",
+    "Pakistan":"PK","Indonesia":"ID","Rwanda":"RW","Senegal":"SN",
+    "Uruguay":"UY","Dominica":"DM","Mali":"ML","Algeria":"DZ",
+    "Canada":"CA","Egypt":"EG","Iceland":"IS","Nepal":"NP",
+    "Mauritania":"MR","Italy":"IT","Guyana":"GY","Guinea":"GN",
+    "Ghana":"GH","Gambia":"GM","Finland":"FI","Grenada":"GD",
+    "Peru":"PE","Bahrain":"BH","Estonia":"EE","Spain":"ES",
+    "Thailand":"TH","Switzerland":"CH","Brazil":"BR","Singapore":"SG",
+    "Nauru":"NR","Iraq":"IQ","Australia":"AU","Georgia":"GE",
+    "Tajikistan":"TJ","Kazakhstan":"KZ","Russia":"RU",
+    "Turkmenistan":"TM","Uzbekistan":"UZ","Kyrgyzstan":"KG",
+    "Azerbaijan":"AZ","United Kingdom":"GB","Suriname":"SR",
 }
 
 ORG_ICONS = {
     "World Bank":"🏦","International Monetary Fund":"💰",
     "European Union":"🇪🇺","Organization of African Unity":"🌍",
     "International Organization Staff":"🏛️",
-    "U.S.S.R. (Discontinued)":"☭","South Africa (Discontinued)":"🇿🇦",
-    "South Yemen (Discontinued)":"🇾🇪","East Germany (Discontinued)":"🇩🇪",
-    "Iraq (Discontinued)":"🇮🇶",
 }
 
 
-def get_iso_codes(country_name):
+def get_iso(country_name):
     if country_name in ORGANIZATIONS or country_name in ("Unknown Code","Unknown"):
         return None, None
-    if country_name in COUNTRY_NAME_OVERRIDES:
-        a2 = COUNTRY_NAME_OVERRIDES[country_name]
-        try:
-            c = pycountry.countries.get(alpha_2=a2)
-            return c.alpha_2, c.alpha_3
-        except: return a2, None
-    try:
-        results = pycountry.countries.search_fuzzy(country_name)
-        if results: return results[0].alpha_2, results[0].alpha_3
-    except: pass
+    if country_name in COUNTRY_ISO:
+        a2 = COUNTRY_ISO[country_name]
+        return a2.lower(), a2.lower()
     return None, None
 
-def get_flag_url(iso2):
-    return f"https://flagcdn.com/w320/{iso2.lower()}.png" if iso2 else None
 
-def render_world_map(iso3, country_name):
-    fig = go.Figure(go.Choropleth(
-        locations=[iso3], z=[1],
-        colorscale=[[0,"#c42b2b"],[1,"#c42b2b"]],
-        showscale=False, marker_line_color="#b0c0d0", marker_line_width=0.5,
-        hovertext=[country_name], hoverinfo="text",
-    ))
-    fig.update_layout(
-        geo=dict(showframe=False, showcoastlines=True, coastlinecolor="#b0c0d0",
-                 projection_type="natural earth", landcolor="#e8f0f6",
-                 oceancolor="#d6e6f0", showocean=True, showcountries=True,
-                 countrycolor="#b0c0d0"),
-        margin=dict(l=0,r=0,t=0,b=0), height=280,
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-    )
-    st.plotly_chart(fig, use_container_width=True)
+def parse_plate(text):
+    clean = text.replace(" ","").upper()
+    m1 = re.search(r'^([ADCS])([A-Z]{2})(\d+)$', clean)
+    m2 = re.search(r'^(\d+)([A-Z]{2})([ADCS])$', clean)
+    if m1: tc, cc, d = m1.group(1), m1.group(2), m1.group(3)
+    elif m2: d, cc, tc = m2.group(1), m2.group(2), m2.group(3)
+    else: return None
+    vt = plate_types.get(tc, "Unknown")
+    country = ofm_codes.get(cc, "Unknown Code")
+    amb = d in ("0001","1")
+    if amb: vt = "Ambassador (" + vt + ")"
+    iso2, _ = get_iso(country)
+    is_org = country in ORGANIZATIONS
+    return {
+        "plate": clean,
+        "type": vt,
+        "code": cc,
+        "country": country,
+        "ambassador": amb,
+        "iso2": iso2,
+        "is_org": is_org,
+        "org_icon": ORG_ICONS.get(country, "🏛️") if is_org else None,
+    }
 
-def get_trivia(name, is_org=False):
-    seed = random.randint(1, 10000)
-    kind = "organization" if is_org else "country"
-    prompt = f"Give me one surprising and fun trivia fact about the {kind} '{name}'. Keep it to 1-2 sentences. Be specific and interesting. Random seed: {seed}. Respond with ONLY the fact, no preamble."
-    try: return model.generate_content(prompt).text.strip()
-    except: return None
 
 def record_scan(code, country):
     try: supabase.table("scans").insert({"code":code,"country":country}).execute()
     except: pass
 
-def get_diplomat_info(plate_text):
-    clean = plate_text.replace(" ","").upper()
-    m1 = re.search(r'^([ADCS])([A-Z]{2})(\d+)$', clean)
-    m2 = re.search(r'^(\d+)([A-Z]{2})([ADCS])$', clean)
-    if m1: tc, cc, d = m1.group(1), m1.group(2), m1.group(3)
-    elif m2: d, cc, tc = m2.group(1), m2.group(2), m2.group(3)
-    else: return None, None, "Format not recognized.", False
-    vt = plate_types.get(tc, "Unknown")
-    country = ofm_codes.get(cc, "Unknown Code")
-    amb = d in ("0001","1")
-    if amb: vt = "Ambassador (" + vt + ")"
-    return vt, cc, country, amb
+
+def get_trivia(name, is_org=False):
+    seed = random.randint(1, 10000)
+    kind = "organization" if is_org else "country"
+    prompt = f"Give me one surprising and fun trivia fact about the {kind} '{name}'. Keep it to 1-2 sentences. Random seed: {seed}. Respond with ONLY the fact."
+    try: return model.generate_content(prompt).text.strip()
+    except: return None
 
 
-def display_result(vehicle_type, code, country, is_ambassador, plate_text=""):
-    if is_ambassador:
-        st.balloons()
-        st.success("🌟 You spotted an Ambassador's official vehicle!")
-    else:
-        st.success("✅ Match found!")
-
-    is_org = country in ORGANIZATIONS
-    iso2, iso3 = get_iso_codes(country)
-    flag_url = get_flag_url(iso2)
-    display_plate = plate_text.upper().replace(" ","") if plate_text else code
-
-    flag_html = ""
-    if flag_url:
-        flag_html = f'<img src="{flag_url}" style="width:44px;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,0.15);"/>'
-    elif is_org:
-        flag_html = f'<span style="font-size:32px;">{ORG_ICONS.get(country,"🏛️")}</span>'
-
-    type_label = ("👑 " + vehicle_type) if is_ambassador else vehicle_type
-
-    st.markdown(f"""
-    <div class="result-stripe">
-        <div class="bolt bolt-l"></div>
-        <div class="bolt bolt-r"></div>
-        <span class="title">DIPLOCHECK</span>
-    </div>
-    <div class="result-body-frame">
-        <div class="bolt bolt-bl"></div>
-        <div class="bolt bolt-br"></div>
-        <div class="result-body">
-            <div class="result-country">
-                {flag_html}
-                <div>
-                    <p class="name">{country}</p>
-                    <p class="type">{type_label}</p>
-                </div>
-            </div>
-            <div class="result-plate-code">{display_plate}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if iso3:
-        st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-        render_world_map(iso3, country)
-
-    with st.spinner("Loading a fun fact..."):
-        trivia = get_trivia(country, is_org=is_org)
-    if trivia:
-        st.markdown(f"""
-        <div class="trivia-box">
-            <div class="trivia-label">💡 Did you know?</div>
-            {trivia}
-        </div>
-        """, unsafe_allow_html=True)
+# --- ROUTES ---
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 
-# --- NAVIGATION ---
-if "page" not in st.session_state:
-    st.session_state.page = "home"
+@app.route("/api/lookup", methods=["POST"])
+def lookup():
+    data = request.json
+    plate_text = data.get("plate", "")
+    if not plate_text:
+        return jsonify({"error": "No plate provided"}), 400
 
-def go_home(): st.session_state.page = "home"
-def go_scan(): st.session_state.page = "scan"
-def go_leaderboard(): st.session_state.page = "leaderboard"
+    result = parse_plate(plate_text)
+    if not result or result["country"] == "Unknown Code":
+        return jsonify({"error": "Could not recognize a valid diplomatic plate format."}), 404
 
-
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#                  LANDING PAGE
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-if st.session_state.page == "home":
-
-    st.markdown("<div style='height:50px'></div>", unsafe_allow_html=True)
-
-    # License plate
-    st.markdown("""
-    <div class="landing-plate-stripe">
-        <div class="bolt bolt-l"></div>
-        <div class="bolt bolt-r"></div>
-        <span class="title">DIPLOCHECK</span>
-    </div>
-    <div class="landing-plate-body">
-        <div class="bolt bolt-bl"></div>
-        <div class="bolt bolt-br"></div>
-        <p class="plate-text">Identify the country behind diplomatic license plates</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-
-    # Clickable card buttons
-    col1, col2 = st.columns(2, gap="medium")
-    with col1:
-        st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
-        st.button("🔍\n\ntype or snap a diplomatic plate", on_click=go_scan, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown('<div class="card-btn-wrap">', unsafe_allow_html=True)
-        st.button("🏆\n\nsee the most spotted countries", on_click=go_leaderboard, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    record_scan(result["code"], result["country"])
+    trivia = get_trivia(result["country"], result["is_org"])
+    result["trivia"] = trivia
+    return jsonify(result)
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#                  SCAN PAGE
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-elif st.session_state.page == "scan":
+@app.route("/api/scan-image", methods=["POST"])
+def scan_image():
+    if "image" not in request.files:
+        return jsonify({"error": "No image provided"}), 400
 
-    col_back, col_rest = st.columns([0.1, 0.9])
-    with col_back:
-        st.button("←", on_click=go_home, help="Back to home")
+    file = request.files["image"]
+    image = Image.open(file.stream)
 
-    st.markdown("""
-    <div class="page-title-bar">
-        <span class="page-title">Check a Plate</span>
-    </div>
-    """, unsafe_allow_html=True)
+    prompt = """Look at this image of a vehicle or license plate. Find the US diplomatic license plate.
+    It will either be in the format "[Letter][Two Letters] [Numbers]" (like DAF 1234)
+    OR reversed "[Numbers] [Two Letters][Letter]" (like 1234 AFD).
+    Respond ONLY with the exact text written on the license plate (letters and numbers).
+    If you cannot read it clearly, respond with the exact word: NONE."""
 
-    st.markdown("""<div class="light-card"><h3>⌨️ Type a plate number</h3><p class="subtitle">Letters and numbers — we'll figure out the format</p></div>""", unsafe_allow_html=True)
-    manual_input = st.text_input("Plate", placeholder="e.g. DAF 1234, AXX 0001, or 1234 AFD", label_visibility="collapsed")
+    try:
+        response = model.generate_content([prompt, image])
+        ai_result = response.text.strip().upper()
 
-    if manual_input:
-        vt, code, country, amb = get_diplomat_info(manual_input)
-        if code and country != "Unknown Code":
-            record_scan(code, country)
-            display_result(vt, code, country, amb, manual_input)
-        else:
-            st.error("Could not recognize a valid diplomatic plate format.")
+        if ai_result == "NONE":
+            return jsonify({"error": "Could not read a diplomatic plate from this image."}), 404
 
-    st.markdown("""<div class="or-divider"><div class="line"></div>or<div class="line"></div></div>""", unsafe_allow_html=True)
+        result = parse_plate(ai_result)
+        if not result or result["country"] == "Unknown Code":
+            return jsonify({"error": f"AI read '{ai_result}' but it doesn't match a known format.", "ai_read": ai_result}), 404
 
-    st.markdown("""<div class="light-card"><h3>📷 Upload or take a photo</h3><p class="subtitle">Snap a plate and let AI read it for you</p></div>""", unsafe_allow_html=True)
+        record_scan(result["code"], result["country"])
+        trivia = get_trivia(result["country"], result["is_org"])
+        result["trivia"] = trivia
+        return jsonify(result)
 
-    up_col, cam_col = st.columns(2)
-    with up_col:
-        uploaded_file = st.file_uploader("Upload", type=["jpg","jpeg","png"], label_visibility="collapsed")
-    with cam_col:
-        camera_file = st.camera_input("Camera", label_visibility="collapsed")
-
-    image_to_process = uploaded_file or camera_file
-    if image_to_process:
-        image = Image.open(image_to_process)
-        st.image(image, caption="Captured Plate", use_container_width=True)
-        with st.spinner("🔍 Analyzing with Google AI..."):
-            prompt = """Look at this image of a vehicle or license plate. Find the US diplomatic license plate.
-            It will either be in the format "[Letter][Two Letters] [Numbers]" (like DAF 1234)
-            OR reversed "[Numbers] [Two Letters][Letter]" (like 1234 AFD).
-            Respond ONLY with the exact text written on the license plate (letters and numbers).
-            If you cannot read it clearly, respond with the exact word: NONE."""
-            try:
-                resp = model.generate_content([prompt, image])
-                ai_result = resp.text.strip().upper()
-                if ai_result == "NONE":
-                    st.error("The AI couldn't clearly see a diplomatic plate. Try typing it above!")
-                else:
-                    vt, code, country, amb = get_diplomat_info(ai_result)
-                    if code and country != "Unknown Code":
-                        record_scan(code, country)
-                        display_result(vt, code, country, amb, ai_result)
-                    elif code and country == "Unknown Code":
-                        st.warning(f"Plate read as '{ai_result}', but the code is not in the database.")
-                    else:
-                        st.error(f"AI read '{ai_result}', but it doesn't match a diplomatic format.")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#               LEADERBOARD PAGE
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-elif st.session_state.page == "leaderboard":
-
-    col_back, col_rest = st.columns([0.1, 0.9])
-    with col_back:
-        st.button("←", on_click=go_home, help="Back to home")
-
-    st.markdown("""
-    <div class="page-title-bar">
-        <span class="page-title">Leaderboard</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    time_filter = st.segmented_control("Period", options=["Today","This Month","All Time"], default="All Time", label_visibility="collapsed")
+@app.route("/api/leaderboard")
+def leaderboard():
+    period = request.args.get("period", "all")
 
     try:
         resp = supabase.table("scans").select("*").execute()
         data = resp.data
-        if data:
-            df = pd.DataFrame(data)
-            if "created_at" in df.columns:
-                df["created_at"] = pd.to_datetime(df["created_at"])
-                now = datetime.utcnow()
-                if time_filter == "Today":
-                    df = df[df["created_at"].dt.date == now.date()]
-                elif time_filter == "This Month":
-                    df = df[(df["created_at"].dt.year==now.year)&(df["created_at"].dt.month==now.month)]
+        if not data:
+            return jsonify({"entries": [], "total_scans": 0, "total_countries": 0, "top_country": None})
 
-            if len(df) == 0:
-                st.info(f"No scans recorded for '{time_filter}' yet.")
-            else:
-                lb = df["country"].value_counts().reset_index()
-                lb.columns = ["Country","Scans"]
+        from collections import Counter
+        now = datetime.utcnow()
 
-                m1,m2,m3 = st.columns(3)
-                m1.metric("Total Scans", int(lb["Scans"].sum()))
-                m2.metric("Countries Spotted", len(lb))
-                m3.metric("Most Spotted", lb.iloc[0]["Country"])
+        filtered = data
+        if period == "today":
+            filtered = [r for r in data if "created_at" in r and r["created_at"][:10] == now.strftime("%Y-%m-%d")]
+        elif period == "month":
+            prefix = now.strftime("%Y-%m")
+            filtered = [r for r in data if "created_at" in r and r["created_at"][:7] == prefix]
 
-                st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-                mx = int(lb["Scans"].max())
+        counts = Counter(r["country"] for r in filtered)
+        entries = [{"country": c, "scans": s, "iso2": get_iso(c)[0]} for c, s in counts.most_common()]
 
-                for i, row in lb.iterrows():
-                    rank = i+1
-                    pct = int((row["Scans"]/mx)*100)
-                    badge = "rank-1" if rank==1 else "rank-2" if rank==2 else "rank-3" if rank==3 else "rank-other"
-                    ri2, _ = get_iso_codes(row["Country"])
-                    fh = ""
-                    if ri2:
-                        fh = f'<img src="https://flagcdn.com/w40/{ri2.lower()}.png" width="24" style="border-radius:2px;vertical-align:middle;margin-right:4px;">'
-                    elif row["Country"] in ORG_ICONS:
-                        fh = f'<span style="margin-right:4px;">{ORG_ICONS[row["Country"]]}</span>'
+        # Add org icons
+        for e in entries:
+            if e["country"] in ORGANIZATIONS:
+                e["org_icon"] = ORG_ICONS.get(e["country"], "🏛️")
 
-                    st.markdown(f"""
-                    <div class="leader-row">
-                        <div class="rank-badge {badge}">{rank}</div>
-                        {fh}
-                        <span style="font-size:14px;font-weight:600;color:#0a1628;flex:1;">{row['Country']}</span>
-                        <div class="leader-bar-bg"><div class="leader-bar-fill" style="width:{pct}%;"></div></div>
-                        <span style="font-size:14px;font-weight:700;color:#0a1628;min-width:28px;text-align:right;">{int(row['Scans'])}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
-                if st.button("Refresh"): st.rerun()
-        else:
-            st.info("No plates have been scanned yet. Be the first!")
+        top = entries[0]["country"] if entries else None
+        return jsonify({
+            "entries": entries,
+            "total_scans": sum(e["scans"] for e in entries),
+            "total_countries": len(entries),
+            "top_country": top,
+        })
     except Exception as e:
-        st.error(f"Could not load leaderboard: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=False)
