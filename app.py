@@ -368,7 +368,7 @@ def leaderboard():
                 e["org_icon"] = ORG_ICONS.get(e["country"], "ORG")
 
         # Type breakdown
-        type_counts = Counter(r.get("plate_type", "Unknown") for r in filtered)
+        type_counts = Counter((r.get("plate_type") or "Unknown") for r in filtered)
 
         top = entries[0]["country"] if entries else None
         return jsonify({
