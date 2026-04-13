@@ -5,266 +5,271 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DiploCheck</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
-    --bg: #f2f2f7;
-    --card: #ffffff;
-    --text: #111111;
-    --text-secondary: #8e8e93;
-    --text-tertiary: #c7c7cc;
-    --border: #e5e5ea;
-    --accent: #111111;
-    --green: #34c759;
-    --gold: #ff9f0a;
-    --radius: 16px;
-    --radius-lg: 22px;
-    --radius-xl: 28px;
-    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    --mono: 'JetBrains Mono', monospace;
+    --bg: #f2f2f7; --card: #fff; --text: #111; --text-s: #8e8e93; --text-t: #c7c7cc;
+    --border: #e5e5ea; --accent: #111; --green: #34c759; --gold: #ff9f0a;
+    --r: 16px; --rl: 22px; --rxl: 28px;
+    --font: 'DM Sans', -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-
 .app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; padding-bottom: 80px; }
 .page { display: none; }
 .page.active { display: block; animation: fadeIn 0.3s ease; }
 
-/* ── Icons (inline SVG) ── */
-.icon-search { width: 18px; height: 18px; }
-.icon-arrow { width: 18px; height: 18px; }
-.icon-back { width: 18px; height: 18px; }
-.icon-cam { width: 20px; height: 20px; }
-.icon-upload { width: 28px; height: 28px; opacity: 0.35; }
-.icon-sm { width: 16px; height: 16px; }
-
-/* ── HEADER ── */
+/* Header */
 .header { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
-.header-back {
-    width: 40px; height: 40px; border-radius: 50%; background: var(--card);
-    border: none; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.2s;
-}
+.header-back { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
 .header-back:active { transform: scale(0.92); }
 .page-title { font-size: 17px; font-weight: 700; text-align: center; flex: 1; }
 
-/* ── HOME ── */
-.home-header { padding: 20px 24px 0; }
-.greeting { font-size: 14px; color: var(--text-secondary); margin-bottom: 2px; }
-.home-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 20px; }
+/* ── HOME / LANDING ── */
+.home-hero { padding: 28px 24px 0; }
+.home-hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 10px; }
+.home-hero p { font-size: 14px; color: var(--text-s); line-height: 1.6; margin-bottom: 24px; }
 
-.search-bar { margin: 0 24px 20px; display: flex; gap: 10px; align-items: center; }
-.search-input-wrap { flex: 1; position: relative; }
-.search-input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); display: flex; }
-.search-input {
-    width: 100%; padding: 16px 16px 16px 44px; font-family: var(--font); font-size: 15px; font-weight: 500;
-    background: var(--card); border: none; border-radius: var(--radius); color: var(--text); outline: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-}
-.search-input::placeholder { color: var(--text-tertiary); }
-.search-go {
-    width: 52px; height: 52px; border-radius: var(--radius); background: var(--accent);
-    border: none; color: white; cursor: pointer; display: flex; align-items: center;
-    justify-content: center; flex-shrink: 0; transition: all 0.2s;
-}
-.search-go:active { transform: scale(0.92); }
+/* Action buttons */
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 24px; margin-bottom: 28px; }
+.action-card { background: var(--card); border-radius: var(--rl); padding: 22px 16px; text-align: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border: 1.5px solid transparent; transition: all 0.25s; }
+.action-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+.action-card:active { transform: scale(0.97); }
+.action-card h3 { font-size: 15px; font-weight: 700; margin-top: 10px; margin-bottom: 3px; }
+.action-card p { font-size: 11px; color: var(--text-s); }
+.action-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; }
 
-.mode-pills { display: flex; gap: 8px; padding: 0 24px; margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.mode-pills::-webkit-scrollbar { display: none; }
-.mode-pill {
-    padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); background: var(--card);
-    font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary);
-    white-space: nowrap; cursor: pointer; transition: all 0.2s;
-}
-.mode-pill:active { transform: scale(0.95); }
-.mode-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+/* Info sections */
+.info-section { padding: 0 24px; margin-bottom: 28px; }
+.info-section h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
+.info-card { background: var(--card); border-radius: var(--rl); padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 12px; }
+.info-card p { font-size: 13px; color: var(--text-s); line-height: 1.6; }
+.info-card .highlight { color: var(--text); font-weight: 600; }
 
-.section-header { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; margin-bottom: 14px; }
-.section-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-.section-link { font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; text-decoration: none; border: none; background: none; font-family: var(--font); }
+/* Plate format visual */
+.plate-visual { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 16px 0 12px; font-family: var(--mono); }
+.plate-segment { padding: 10px 14px; border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; }
+.seg-type { background: #111; color: white; }
+.seg-country { background: #e8f4fd; color: #1a6bb5; }
+.seg-number { background: var(--bg); color: var(--text); }
+.seg-label { font-size: 9px; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-top: 4px; font-weight: 500; }
 
-/* ── RESULT CARD ── */
-.result-hero {
-    margin: 0 24px 20px; border-radius: var(--radius-xl); overflow: hidden;
-    background: var(--card); box-shadow: 0 4px 20px rgba(0,0,0,0.06); animation: slideUp 0.4s ease;
+/* Type pills row */
+.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.type-item { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
+.type-item .letter { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+.type-item .label { font-size: 12px; color: var(--text-s); margin-top: 2px; }
+.type-item.amb { border: 1.5px solid var(--gold); background: #fff8ed; }
+
+/* Stats row */
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.stat-box { background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; }
+.stat-box .num { font-family: var(--mono); font-size: 24px; font-weight: 700; }
+.stat-box .lbl { font-size: 11px; color: var(--text-s); margin-top: 4px; }
+
+/* ── SCAN PAGE ── */
+.scan-content { padding: 0 24px; margin-top: 20px; }
+.field-label { font-size: 11px; font-weight: 600; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
+.input-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.text-input {
+    flex: 1; padding: 16px 18px; font-family: var(--mono); font-size: 16px; font-weight: 500;
+    background: var(--card); border: 2px solid var(--border); border-radius: 14px;
+    color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; outline: none;
 }
+.text-input:focus { border-color: var(--accent); }
+.text-input::placeholder { color: var(--text-t); text-transform: none; letter-spacing: 0; font-family: var(--font); font-size: 14px; font-weight: 400; }
+.go-btn { width: 56px; border-radius: 14px; background: var(--accent); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.go-btn:active { transform: scale(0.92); }
+
+.or-line { display: flex; align-items: center; gap: 16px; color: var(--text-t); font-size: 12px; font-weight: 500; margin: 4px 0 16px; }
+.or-line .l { flex: 1; height: 1px; background: var(--border); }
+
+.upload-drop { background: var(--card); border: 2px dashed var(--border); border-radius: var(--rl); padding: 40px 20px; text-align: center; cursor: pointer; }
+.upload-drop:hover { border-color: var(--accent); }
+.upload-drop:active { transform: scale(0.98); }
+.upload-drop p { font-size: 13px; color: var(--text-s); font-weight: 500; margin-top: 10px; }
+.upload-drop .sub { font-size: 11px; color: var(--text-t); margin-top: 4px; }
+.upload-drop input { display: none; }
+.upload-preview { display: none; margin-top: 14px; border-radius: var(--rl); overflow: hidden; }
+.upload-preview img { width: 100%; display: block; }
+
+/* ── RESULT ── */
+.result-area { margin-top: 20px; display: none; }
+.result-area.show { display: block; }
+.result-hero { border-radius: var(--rxl); overflow: hidden; background: var(--card); box-shadow: 0 4px 20px rgba(0,0,0,0.06); animation: slideUp 0.4s ease; margin-bottom: 16px; }
 .result-flag-banner { height: 180px; position: relative; overflow: hidden; }
 .result-flag-banner img { width: 100%; height: 100%; object-fit: cover; }
-.result-plate-badge {
-    position: absolute; bottom: 14px; right: 16px;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 6px 14px;
-    border-radius: 10px; font-family: var(--mono); font-size: 14px; font-weight: 600;
-    color: white; letter-spacing: 0.08em;
-}
-.result-org-banner {
-    height: 120px; background: linear-gradient(135deg, #1a1a2e, #2d2d44);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 32px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: 0.1em;
-}
+.result-plate-badge { position: absolute; bottom: 14px; right: 16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 10px; font-family: var(--mono); font-size: 14px; font-weight: 600; color: white; letter-spacing: 0.08em; }
+.result-org-banner { height: 120px; background: linear-gradient(135deg, #1a1a2e, #2d2d44); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: 0.12em; }
 .result-details { padding: 18px 20px; }
 .result-type-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .result-type-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-.result-type { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
-.result-country-name { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
-.result-trivia { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
-.result-trivia b { color: var(--text); font-weight: 600; }
+.result-type { font-size: 13px; color: var(--text-s); font-weight: 500; }
+.result-country-name { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
+.amb-banner { background: linear-gradient(135deg, #ff9f0a, #ff6b00); padding: 10px 20px; font-size: 13px; font-weight: 700; color: white; }
 
-.amb-banner {
-    background: linear-gradient(135deg, #ff9f0a, #ff6b00);
-    padding: 10px 20px; display: flex; align-items: center; gap: 8px;
-    font-size: 13px; font-weight: 700; color: white;
-}
+/* Map */
+.result-map { border-radius: var(--rl); overflow: hidden; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.result-map #map { height: 200px; width: 100%; }
 
-/* ── UPLOAD ── */
-.upload-section { padding: 0 24px; margin-bottom: 20px; }
-.upload-drop {
-    background: var(--card); border: 2px dashed var(--border); border-radius: var(--radius-lg);
-    padding: 48px 20px; text-align: center; cursor: pointer; transition: all 0.25s;
-}
-.upload-drop:active { transform: scale(0.98); }
-.upload-drop:hover { border-color: var(--accent); }
-.upload-drop p { font-size: 14px; color: var(--text-secondary); font-weight: 500; margin-top: 12px; }
-.upload-drop .sub { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; }
-.upload-drop input { display: none; }
-.upload-preview { display: none; margin-top: 14px; border-radius: var(--radius-lg); overflow: hidden; }
-.upload-preview img { width: 100%; display: block; }
+/* Trivia */
+.trivia-card { background: var(--card); border-radius: var(--rl); padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 16px; }
+.trivia-card .label { font-size: 11px; font-weight: 700; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.trivia-card .fact { font-size: 13px; color: var(--text-s); line-height: 1.6; }
+.trivia-card .fact b { color: var(--text); }
+.trivia-loading { font-size: 12px; color: var(--text-t); font-style: italic; }
 
 /* ── LEADERBOARD ── */
-.lb-filters { display: flex; gap: 8px; padding: 0 24px; margin-bottom: 20px; }
-.lb-pill {
-    padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); background: var(--card);
-    font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-secondary);
-    cursor: pointer; transition: all 0.2s;
-}
+.lb-section { padding: 0 24px; }
+.lb-filters { display: flex; gap: 8px; margin-bottom: 20px; }
+.lb-pill { padding: 10px 18px; border-radius: 24px; border: 1.5px solid var(--border); background: var(--card); font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-s); cursor: pointer; }
 .lb-pill:active { transform: scale(0.95); }
 .lb-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
 
-.lb-metrics { display: flex; gap: 10px; padding: 0 24px; margin-bottom: 20px; }
-.lb-metric { flex: 1; background: var(--card); border-radius: var(--radius); padding: 16px 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.lb-metric .lbl { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.lb-metric .val { font-family: var(--mono); font-size: 20px; font-weight: 700; margin-top: 4px; }
-.lb-metric .val.txt { font-family: var(--font); font-size: 13px; }
+.lb-metrics { display: flex; gap: 10px; margin-bottom: 16px; }
+.lb-metric { flex: 1; background: var(--card); border-radius: var(--r); padding: 14px 12px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.lb-metric .lbl { font-size: 9px; color: var(--text-t); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.lb-metric .val { font-family: var(--mono); font-size: 18px; font-weight: 700; margin-top: 3px; }
+.lb-metric .val.txt { font-family: var(--font); font-size: 12px; }
 
-.lb-list { margin: 0 24px; background: var(--card); border-radius: var(--radius-lg); padding: 4px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.lb-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--bg); }
+/* Type breakdown */
+.type-breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+.type-stat { background: var(--card); border-radius: 12px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.type-stat .num { font-family: var(--mono); font-size: 18px; font-weight: 700; }
+.type-stat .lbl { font-size: 9px; color: var(--text-s); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+
+.lb-list { background: var(--card); border-radius: var(--rl); padding: 4px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
+.lb-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--bg); }
 .lb-row:last-child { border-bottom: none; }
 .lb-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
-.lb-r1 { background: var(--gold); }
-.lb-r2 { background: #a8b4c0; }
-.lb-r3 { background: #c4956a; }
-.lb-rx { background: var(--bg); color: var(--text-secondary); }
+.lb-r1 { background: var(--gold); } .lb-r2 { background: #a8b4c0; } .lb-r3 { background: #c4956a; } .lb-rx { background: var(--bg); color: var(--text-s); }
 .lb-flag { width: 26px; border-radius: 4px; }
 .lb-name { flex: 1; font-size: 14px; font-weight: 600; }
-.lb-bar { width: 80px; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.lb-bar { width: 70px; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
 .lb-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.6s ease; }
 .lb-count { font-family: var(--mono); font-size: 13px; font-weight: 600; min-width: 24px; text-align: right; }
 
-/* ── LOADING / ERROR ── */
-.loading { display: none; text-align: center; padding: 40px 24px; color: var(--text-secondary); font-size: 13px; }
+/* Shared */
+.loading { display: none; text-align: center; padding: 36px 24px; color: var(--text-s); font-size: 13px; }
 .loading.show { display: block; }
 .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
-.error-msg { display: none; margin: 0 24px 16px; background: #fff2f2; border-radius: var(--radius); padding: 14px 18px; color: #c42b2b; font-size: 13px; font-weight: 500; }
+.error-msg { display: none; margin: 16px 0; background: #fff2f2; border-radius: var(--r); padding: 14px 18px; color: #c42b2b; font-size: 13px; font-weight: 500; }
 .error-msg.show { display: block; animation: slideUp 0.3s ease; }
-.empty-state { text-align: center; padding: 48px 24px; color: var(--text-tertiary); font-size: 14px; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-t); font-size: 14px; }
 
-/* ── TAB BAR ── */
-.tab-bar {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border); display: flex;
-    padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 100;
-}
-.tab {
-    flex: 1; text-align: center; padding: 8px 0 4px; border: none; background: none;
-    font-family: var(--font); font-size: 10px; font-weight: 600; color: var(--text-tertiary);
-    cursor: pointer; transition: color 0.2s; display: flex; flex-direction: column; align-items: center; gap: 3px;
-}
+/* Tab bar */
+.tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 100; }
+.tab { flex: 1; text-align: center; padding: 8px 0 4px; border: none; background: none; font-family: var(--font); font-size: 10px; font-weight: 600; color: var(--text-t); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .tab.active { color: var(--text); }
-.tab svg { transition: color 0.2s; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-@media (min-width: 481px) {
-    body { display: flex; justify-content: center; align-items: flex-start; }
-    .app { box-shadow: 0 0 60px rgba(0,0,0,0.08); }
-}
+@media (min-width: 481px) { body { display: flex; justify-content: center; } .app { box-shadow: 0 0 60px rgba(0,0,0,0.08); } }
 </style>
 </head>
 <body>
-
 <div class="app">
-    <!-- ═══ HOME ═══ -->
-    <div class="page active" id="page-home">
-        <div class="home-header">
-            <p class="greeting">Welcome to</p>
-            <h1 class="home-title">DiploCheck</h1>
-        </div>
 
-        <div class="search-bar">
-            <div class="search-input-wrap">
-                <span class="search-input-icon">
-                    <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                </span>
-                <input type="text" class="search-input" id="plateInput" placeholder="Enter plate number..." autocomplete="off" spellcheck="false">
-            </div>
-            <button class="search-go" onclick="lookupPlate()">
-                <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-        </div>
-
-        <div class="mode-pills">
-            <button class="mode-pill active" onclick="selectMode(this)">Type</button>
-            <button class="mode-pill" onclick="selectMode(this); showPage('upload')">Upload Photo</button>
-            <button class="mode-pill" onclick="showPage('leaderboard')">Leaderboard</button>
-        </div>
-
-        <div class="loading" id="homeLoading"><div class="spinner"></div><p>Analyzing plate...</p></div>
-        <div class="error-msg" id="homeError"></div>
-        <div id="homeResult"></div>
-
-        <div class="section-header" style="margin-top:8px;">
-            <h2 class="section-title">Top spotted</h2>
-            <button class="section-link" onclick="showPage('leaderboard')">See all</button>
-        </div>
-        <div id="homeTopList" style="margin:0 24px 24px;"></div>
+<!-- ═══ HOME ═══ -->
+<div class="page active" id="page-home">
+    <div class="home-hero">
+        <h1>DiploCheck</h1>
+        <p>Spot a diplomatic license plate on the streets? Look it up instantly to discover which country or organization it belongs to, the vehicle type, and the diplomat's rank.</p>
     </div>
 
-    <!-- ═══ UPLOAD ═══ -->
-    <div class="page" id="page-upload">
-        <div class="header">
-            <button class="header-back" onclick="showPage('home')">
-                <svg class="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <span class="page-title">Upload Photo</span>
-            <div style="width:40px"></div>
+    <div class="action-row">
+        <div class="action-card" onclick="showPage('scan')">
+            <div class="action-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <h3>Check a Plate</h3>
+            <p>Type or scan a plate</p>
         </div>
-        <div class="upload-section" style="margin-top:24px;">
-            <div class="upload-drop" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-                <svg class="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-bottom:4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <p>Tap to upload a photo</p>
-                <p class="sub">JPG, JPEG, PNG</p>
-                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
-            </div>
-            <div class="upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview"></div>
+        <div class="action-card" onclick="showPage('leaderboard')">
+            <div class="action-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg></div>
+            <h3>Leaderboard</h3>
+            <p>Most spotted nations</p>
         </div>
-        <div class="loading" id="uploadLoading"><div class="spinner"></div><p>AI is reading the plate...</p></div>
-        <div class="error-msg" id="uploadError"></div>
-        <div id="uploadResult"></div>
     </div>
 
-    <!-- ═══ LEADERBOARD ═══ -->
-    <div class="page" id="page-leaderboard">
-        <div class="header">
-            <button class="header-back" onclick="showPage('home')">
-                <svg class="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <span class="page-title">Leaderboard</span>
-            <div style="width:40px"></div>
+    <div class="info-section">
+        <h2>How it works</h2>
+        <div class="info-card">
+            <p>U.S. diplomatic license plates follow a specific format set by the Office of Foreign Missions (OFM). Each plate encodes three pieces of information:</p>
+            <div class="plate-visual">
+                <div><div class="plate-segment seg-type">D</div><span class="seg-label">Type</span></div>
+                <div><div class="plate-segment seg-country">AF</div><span class="seg-label">Country</span></div>
+                <div><div class="plate-segment seg-number">1234</div><span class="seg-label">Vehicle #</span></div>
+            </div>
+            <p>The <span class="highlight">first letter</span> indicates the vehicle type. The <span class="highlight">two-letter code</span> identifies the country or organization. The <span class="highlight">numbers</span> identify the specific vehicle.</p>
         </div>
-        <div style="height:20px"></div>
+    </div>
+
+    <div class="info-section">
+        <h2>Vehicle types</h2>
+        <div class="info-card">
+            <div class="type-grid">
+                <div class="type-item"><div class="letter">D</div><div class="label">Diplomat</div></div>
+                <div class="type-item"><div class="letter">C</div><div class="label">Consular</div></div>
+                <div class="type-item"><div class="letter">S</div><div class="label">Embassy Staff</div></div>
+                <div class="type-item"><div class="letter">A</div><div class="label">UN Secretariat</div></div>
+            </div>
+        </div>
+        <div class="info-card" style="border:1.5px solid var(--gold); background:#fffbf0;">
+            <p><span class="highlight" style="color:#b8860b;">The Ambassador's car</span></p>
+            <p style="margin-top:6px;">When the vehicle number is <span class="highlight">0001</span>, it belongs to the Ambassador — the highest-ranking diplomat from that country. Spotting one is rare.</p>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <h2>Diplomatic vehicles in the U.S.</h2>
+        <div class="info-card">
+            <p>Washington, D.C. is home to the largest concentration of diplomatic vehicles in the United States. Across the country:</p>
+            <div class="stat-row">
+                <div class="stat-box"><div class="num">~15,000</div><div class="lbl">Registered vehicles</div></div>
+                <div class="stat-box"><div class="num">177</div><div class="lbl">Countries &amp; orgs</div></div>
+            </div>
+            <p style="margin-top:14px;">These vehicles carry special legal protections under the Vienna Convention on Diplomatic Relations, including immunity from traffic enforcement in many cases.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SCAN ═══ -->
+<div class="page" id="page-scan">
+    <div class="header">
+        <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="page-title">Check a Plate</span>
+        <div style="width:40px"></div>
+    </div>
+    <div class="scan-content">
+        <label class="field-label">Plate number</label>
+        <div class="input-row">
+            <input type="text" class="text-input" id="plateInput" placeholder="e.g. DAF 1234" autocomplete="off" spellcheck="false">
+            <button class="go-btn" onclick="lookupPlate()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+        <div class="or-line"><div class="l"></div>or<div class="l"></div></div>
+        <label class="field-label">Upload a photo</label>
+        <div class="upload-drop" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <p>Tap to upload or drag a photo</p>
+            <p class="sub">JPG, JPEG, PNG</p>
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
+        </div>
+        <div class="upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview"></div>
+        <div class="loading" id="scanLoading"><div class="spinner"></div><p>Analyzing plate...</p></div>
+        <div class="error-msg" id="scanError"></div>
+        <div class="result-area" id="scanResult"></div>
+    </div>
+</div>
+
+<!-- ═══ LEADERBOARD ═══ -->
+<div class="page" id="page-leaderboard">
+    <div class="header">
+        <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="page-title">Leaderboard</span>
+        <div style="width:40px"></div>
+    </div>
+    <div class="lb-section" style="margin-top:20px;">
         <div class="lb-filters">
             <button class="lb-pill" onclick="filterLB('today',this)">Today</button>
             <button class="lb-pill" onclick="filterLB('month',this)">This Month</button>
@@ -273,70 +278,95 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
         <div class="loading" id="lbLoading"><div class="spinner"></div><p>Loading...</p></div>
         <div id="lbContent"></div>
     </div>
+</div>
 
-    <!-- ═══ TAB BAR ═══ -->
-    <div class="tab-bar">
-        <button class="tab active" onclick="showPage('home')">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Home
-        </button>
-        <button class="tab" onclick="showPage('upload')">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            Scan
-        </button>
-        <button class="tab" onclick="showPage('leaderboard')">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg>
-            Board
-        </button>
-    </div>
+<!-- TAB BAR -->
+<div class="tab-bar">
+    <button class="tab active" onclick="showPage('home')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+    </button>
+    <button class="tab" onclick="showPage('scan')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Scan
+    </button>
+    <button class="tab" onclick="showPage('leaderboard')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg>
+        Board
+    </button>
+</div>
 </div>
 
 <script>
+let mapInstance = null;
+
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('page-' + id).classList.add('active');
+    document.getElementById('page-'+id).classList.add('active');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const map = {home:0, upload:1, leaderboard:2};
-    document.querySelectorAll('.tab')[map[id]||0].classList.add('active');
+    const m = {home:0,scan:1,leaderboard:2};
+    document.querySelectorAll('.tab')[m[id]||0].classList.add('active');
     window.scrollTo(0,0);
-    if (id === 'leaderboard') loadLB('all');
+    if (id==='leaderboard') loadLB('all');
 }
 
-function selectMode(btn) {
-    document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-}
-
+// ── LOOKUP ──
 const plateInput = document.getElementById('plateInput');
-plateInput.addEventListener('keydown', e => { if (e.key === 'Enter') lookupPlate(); });
+plateInput.addEventListener('keydown', e => { if(e.key==='Enter') lookupPlate(); });
 
 async function lookupPlate() {
     const text = plateInput.value.trim();
     if (!text) return;
-    const loading = document.getElementById('homeLoading');
-    const error = document.getElementById('homeError');
-    const result = document.getElementById('homeResult');
-    loading.classList.add('show'); error.classList.remove('show'); result.innerHTML = '';
-
+    const loading = document.getElementById('scanLoading');
+    const error = document.getElementById('scanError');
+    const result = document.getElementById('scanResult');
+    loading.classList.add('show'); error.classList.remove('show'); result.classList.remove('show'); result.innerHTML='';
     try {
-        const resp = await fetch('/api/lookup', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({plate:text})
-        });
+        const resp = await fetch('/api/lookup', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plate:text})});
         const data = await resp.json();
-        if (!resp.ok) { error.textContent = data.error; error.classList.add('show'); }
-        else renderHero(data, result);
-    } catch(e) { error.textContent = 'Connection error.'; error.classList.add('show'); }
+        if (!resp.ok) { error.textContent=data.error; error.classList.add('show'); }
+        else renderResult(data, result);
+    } catch(e) { error.textContent='Connection error.'; error.classList.add('show'); }
     loading.classList.remove('show');
 }
 
-function renderHero(data, container) {
+// ── UPLOAD ──
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', handleUpload);
+async function handleUpload() {
+    const file = fileInput.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { document.getElementById('previewImg').src=e.target.result; document.getElementById('uploadPreview').style.display='block'; };
+    reader.readAsDataURL(file);
+    const loading = document.getElementById('scanLoading');
+    const error = document.getElementById('scanError');
+    const result = document.getElementById('scanResult');
+    loading.classList.add('show'); error.classList.remove('show'); result.classList.remove('show'); result.innerHTML='';
+    const fd = new FormData(); fd.append('image',file);
+    try {
+        const resp = await fetch('/api/scan-image', {method:'POST', body:fd});
+        const data = await resp.json();
+        if (!resp.ok) { error.textContent=data.error; error.classList.add('show'); }
+        else renderResult(data, result);
+    } catch(e) { error.textContent='Connection error.'; error.classList.add('show'); }
+    loading.classList.remove('show');
+}
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor='var(--accent)'; });
+uploadZone.addEventListener('dragleave', () => uploadZone.style.borderColor='');
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.style.borderColor=''; if(e.dataTransfer.files.length){fileInput.files=e.dataTransfer.files; handleUpload();} });
+
+// ── RENDER RESULT ──
+function renderResult(data, container) {
     let bannerHtml = '';
     if (data.iso2) {
         bannerHtml = `<div class="result-flag-banner"><img src="https://flagcdn.com/w640/${data.iso2}.png" alt="${data.country}"><div class="result-plate-badge">${fmt(data.plate)}</div></div>`;
     } else if (data.org_icon) {
-        bannerHtml = `<div class="result-org-banner">${data.country}</div>`;
+        bannerHtml = `<div class="result-org-banner">${data.org_icon}</div>`;
     }
+    const triviaId = 'trivia-'+Math.random().toString(36).slice(2);
+    const mapId = 'map-'+Math.random().toString(36).slice(2);
+
     container.innerHTML = `
     <div class="result-hero">
         ${data.ambassador ? '<div class="amb-banner">Ambassador Vehicle</div>' : ''}
@@ -344,95 +374,81 @@ function renderHero(data, container) {
         <div class="result-details">
             <div class="result-type-row"><div class="result-type-dot"></div><span class="result-type">${data.type}</span></div>
             <h3 class="result-country-name">${data.country}</h3>
-            ${data.trivia ? `<p class="result-trivia"><b>Did you know?</b> ${data.trivia}</p>` : ''}
         </div>
-    </div>`;
-    loadHomeTop();
+    </div>
+    ${data.lat && data.lng ? `<div class="result-map"><div id="${mapId}" style="height:200px;width:100%;"></div></div>` : ''}
+    <div class="trivia-card" id="${triviaId}"><div class="label">Fun fact</div><div class="fact"><span class="trivia-loading">Loading...</span></div></div>`;
+
+    container.classList.add('show');
+
+    // Init map
+    if (data.lat && data.lng) {
+        setTimeout(() => {
+            if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+            mapInstance = L.map(mapId, {zoomControl: false, attributionControl: false}).setView([data.lat, data.lng], 4);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(mapInstance);
+            L.circleMarker([data.lat, data.lng], {radius: 8, fillColor: '#111', fillOpacity: 0.9, color: '#fff', weight: 2}).addTo(mapInstance);
+        }, 100);
+    }
+
+    // Async trivia
+    loadTrivia(data.country, data.is_org, triviaId);
 }
 
-function fmt(p) { p = p.replace(/\s/g,''); return p.length > 3 ? p.slice(0,3)+' '+p.slice(3) : p; }
-
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', handleUpload);
-
-async function handleUpload() {
-    const file = fileInput.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => { document.getElementById('previewImg').src = e.target.result; document.getElementById('uploadPreview').style.display = 'block'; };
-    reader.readAsDataURL(file);
-
-    const loading = document.getElementById('uploadLoading');
-    const error = document.getElementById('uploadError');
-    const result = document.getElementById('uploadResult');
-    loading.classList.add('show'); error.classList.remove('show'); result.innerHTML = '';
-
-    const fd = new FormData(); fd.append('image', file);
+async function loadTrivia(name, isOrg, elId) {
     try {
-        const resp = await fetch('/api/scan-image', {method:'POST', body:fd});
+        const resp = await fetch(`/api/trivia?name=${encodeURIComponent(name)}&org=${isOrg}`);
         const data = await resp.json();
-        if (!resp.ok) { error.textContent = data.error; error.classList.add('show'); }
-        else renderHero(data, result);
-    } catch(e) { error.textContent = 'Connection error.'; error.classList.add('show'); }
-    loading.classList.remove('show');
+        const el = document.getElementById(elId);
+        if (el && data.trivia) el.querySelector('.fact').innerHTML = data.trivia;
+        else if (el) el.remove();
+    } catch(e) { const el=document.getElementById(elId); if(el) el.remove(); }
 }
 
-const uploadZone = document.getElementById('uploadZone');
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--accent)'; });
-uploadZone.addEventListener('dragleave', () => uploadZone.style.borderColor = '');
-uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.style.borderColor = ''; if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleUpload(); } });
+function fmt(p) { p=p.replace(/\s/g,''); return p.length>3 ? p.slice(0,3)+' '+p.slice(3) : p; }
 
-async function loadHomeTop() {
-    try {
-        const resp = await fetch('/api/leaderboard?period=all');
-        const data = await resp.json();
-        const el = document.getElementById('homeTopList');
-        if (!data.entries||!data.entries.length) { el.innerHTML=''; return; }
-        const max = data.entries[0].scans;
-        const top = data.entries.slice(0,5);
-        let html = '<div style="background:var(--card);border-radius:var(--radius-lg);padding:4px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">';
-        top.forEach((e,i) => {
-            const r=i+1, rc=r===1?'lb-r1':r===2?'lb-r2':r===3?'lb-r3':'lb-rx';
-            let fh = e.iso2 ? `<img class="lb-flag" src="https://flagcdn.com/w40/${e.iso2}.png" alt="">` : '';
-            const pct = Math.round((e.scans/max)*100);
-            html += `<div class="lb-row"><div class="lb-rank ${rc}">${r}</div>${fh}<span class="lb-name">${e.country}</span><div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%"></div></div><span class="lb-count">${e.scans}</span></div>`;
-        });
-        el.innerHTML = html + '</div>';
-    } catch(e) {}
-}
-
-function filterLB(period, btn) {
-    document.querySelectorAll('.lb-pill').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    loadLB(period);
+// ── LEADERBOARD ──
+function filterLB(period,btn) {
+    document.querySelectorAll('.lb-pill').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active'); loadLB(period);
 }
 
 async function loadLB(period) {
-    const loading = document.getElementById('lbLoading');
-    const content = document.getElementById('lbContent');
-    loading.classList.add('show'); content.innerHTML = '';
+    const loading=document.getElementById('lbLoading');
+    const content=document.getElementById('lbContent');
+    loading.classList.add('show'); content.innerHTML='';
     try {
         const resp = await fetch(`/api/leaderboard?period=${period}`);
         const data = await resp.json();
         if (!data.entries||!data.entries.length) { content.innerHTML='<div class="empty-state">No scans yet. Be the first!</div>'; loading.classList.remove('show'); return; }
-        const max = data.entries[0].scans;
+        const max=data.entries[0].scans;
+        const tc = data.type_counts || {};
+
         let html = `<div class="lb-metrics">
             <div class="lb-metric"><div class="lbl">Scans</div><div class="val">${data.total_scans}</div></div>
             <div class="lb-metric"><div class="lbl">Countries</div><div class="val">${data.total_countries}</div></div>
             <div class="lb-metric"><div class="lbl">Top</div><div class="val txt">${data.top_country}</div></div>
-        </div><div class="lb-list">`;
+        </div>`;
+
+        // Type breakdown
+        html += `<div class="type-breakdown">
+            <div class="type-stat"><div class="num">${tc['Diplomat']||0}</div><div class="lbl">Diplomat</div></div>
+            <div class="type-stat"><div class="num">${tc['Consular']||0}</div><div class="lbl">Consular</div></div>
+            <div class="type-stat"><div class="num">${tc['Embassy Staff']||0}</div><div class="lbl">Staff</div></div>
+            <div class="type-stat"><div class="num">${tc['Ambassador']||0}</div><div class="lbl">Ambass.</div></div>
+        </div>`;
+
+        html += '<div class="lb-list">';
         data.entries.forEach((e,i) => {
             const r=i+1, rc=r===1?'lb-r1':r===2?'lb-r2':r===3?'lb-r3':'lb-rx';
-            let fh = e.iso2 ? `<img class="lb-flag" src="https://flagcdn.com/w40/${e.iso2}.png" alt="">` : '';
-            const pct = Math.round((e.scans/max)*100);
-            html += `<div class="lb-row"><div class="lb-rank ${rc}">${r}</div>${fh}<span class="lb-name">${e.country}</span><div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%"></div></div><span class="lb-count">${e.scans}</span></div>`;
+            let fh=e.iso2?`<img class="lb-flag" src="https://flagcdn.com/w40/${e.iso2}.png" alt="">`:'';
+            const pct=Math.round((e.scans/max)*100);
+            html+=`<div class="lb-row"><div class="lb-rank ${rc}">${r}</div>${fh}<span class="lb-name">${e.country}</span><div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%"></div></div><span class="lb-count">${e.scans}</span></div>`;
         });
-        content.innerHTML = html + '</div>';
-    } catch(e) { content.innerHTML = '<div class="empty-state">Could not load.</div>'; }
+        content.innerHTML=html+'</div>';
+    } catch(e) { content.innerHTML='<div class="empty-state">Could not load.</div>'; }
     loading.classList.remove('show');
 }
-
-loadHomeTop();
 </script>
 </body>
 </html>
