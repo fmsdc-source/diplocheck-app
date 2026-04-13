@@ -1,9 +1,8 @@
 import os
 import re
 import random
-import base64
-from io import BytesIO
-from datetime import datetime, timedelta
+import io
+from datetime import datetime
 
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
@@ -12,7 +11,6 @@ from supabase import create_client, Client
 
 app = Flask(__name__)
 
-# --- CONFIG (env vars for Cloud Run, fallback to .env) ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
@@ -21,7 +19,6 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.5-flash')
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# --- OFM CODES ---
 ofm_codes = {
     "AA":"Congo, Democratic Republic of the","AC":"Ivory Coast","AF":"Japan",
     "AH":"Madagascar","AJ":"Panama","AK":"Cape Verde","AQ":"Syria","AU":"Uganda",
@@ -145,24 +142,81 @@ COUNTRY_ISO = {
     "Azerbaijan":"AZ","United Kingdom":"GB","Suriname":"SR",
 }
 
+# Country coordinates for map centering
+COUNTRY_COORDS = {
+    "CI":[7.5,-5.5],"CD":[-4.0,21.8],"JP":[36.2,138.3],"MG":[-18.8,46.9],
+    "PA":[8.5,-80.8],"CV":[16.0,-24.0],"SY":[34.8,38.9],"UG":[1.4,32.3],
+    "IL":[31.0,34.8],"MH":[7.1,171.2],"ZA":[-30.6,22.9],"SB":[-9.6,160.2],
+    "IQ":[33.2,43.7],"KH":[12.6,105.0],"ET":[9.1,40.5],"FM":[7.4,150.6],
+    "AF":[33.9,67.7],"BT":[27.5,90.4],"BW":[-22.3,24.7],"CM":[7.4,12.4],
+    "BI":[-3.4,29.9],"CN":[35.9,104.2],"CO":[4.6,-74.3],"CR":[10.0,-84.2],
+    "CU":[21.5,-77.8],"CY":[35.1,33.4],"DO":[18.7,-70.2],"EC":[-1.8,-78.2],
+    "GP":[16.3,-61.6],"FR":[46.2,2.2],"GR":[39.1,21.8],"IN":[20.6,79.0],
+    "DK":[56.3,9.5],"BD":[23.7,90.4],"SK":[48.7,19.7],"PW":[7.5,134.6],
+    "IE":[53.1,-8.2],"LB":[33.9,35.9],"KE":[-0.0,37.9],"LR":[6.4,-9.4],
+    "LY":[26.3,17.2],"MT":[35.9,14.4],"MA":[31.8,-7.1],"PH":[12.9,121.8],
+    "NL":[52.1,5.3],"QA":[25.4,51.2],"LK":[7.9,80.8],"VA":[41.9,12.5],
+    "SL":[8.5,-11.8],"SR":[4.0,-56.0],"SE":[60.1,18.6],"UA":[48.4,31.2],
+    "ZM":[-13.1,27.8],"TR":[38.9,35.2],"AL":[41.2,20.2],"KP":[40.3,127.5],
+    "VU":[-15.4,166.9],"TO":[-21.2,-175.2],"MN":[46.9,103.8],"BE":[50.5,4.5],
+    "GT":[15.8,-90.2],"BJ":[9.3,2.3],"GW":[12.0,-15.2],"HT":[19.1,-72.3],
+    "HN":[15.2,-86.2],"KW":[29.3,47.5],"MU":[-20.3,57.6],"NG":[9.1,8.7],
+    "PT":[39.4,-8.2],"SO":[5.2,46.2],"TD":[15.5,18.7],"TN":[34.0,9.6],
+    "TG":[8.6,1.2],"SI":[46.2,14.9],"MC":[43.7,7.4],"ER":[15.2,39.8],
+    "GQ":[1.6,10.3],"HU":[47.2,19.5],"LT":[55.2,23.9],"FJ":[-18.0,179.0],
+    "JO":[30.6,36.2],"JM":[18.1,-77.3],"GA":[-0.8,11.6],"LU":[49.8,6.1],
+    "MY":[4.2,101.9],"MX":[23.6,-102.6],"NA":[-22.9,18.5],"ST":[0.2,6.6],
+    "SA":[23.9,45.1],"SC":[-4.7,55.5],"SD":[12.9,30.2],"VE":[6.4,-66.6],
+    "VN":[14.1,108.3],"DE":[51.2,10.5],"DJ":[11.6,43.1],"KM":[-12.2,44.3],
+    "BS":[25.0,-77.4],"MV":[3.2,73.2],"OM":[21.5,55.9],"PG":[-6.3,143.9],
+    "PY":[-23.4,-58.4],"RO":[45.9,24.9],"AO":[-11.2,17.9],"AT":[47.5,13.3],
+    "BB":[13.2,-59.5],"BZ":[17.2,-88.5],"BM":[32.3,-64.8],"BO":[-16.3,-63.6],
+    "BY":[53.7,27.9],"CZ":[49.8,15.5],"NO":[60.5,8.5],"CL":[-35.7,-71.5],
+    "BN":[4.9,114.9],"AR":[-38.4,-63.6],"ZW":[-20.0,30.0],"YE":[15.6,48.5],
+    "BF":[12.3,-1.6],"BG":[42.7,25.5],"LA":[19.9,102.5],"LV":[56.9,24.1],
+    "LS":[-29.6,28.2],"MW":[-13.3,34.3],"MZ":[-18.7,35.5],"NZ":[-40.9,174.9],
+    "NI":[12.9,-85.2],"NE":[17.6,8.1],"PL":[51.9,19.1],"PK":[30.4,69.3],
+    "ID":[-0.8,113.9],"RW":[-1.9,29.9],"KN":[17.3,-62.7],"VC":[12.9,-61.3],
+    "SN":[14.5,-14.5],"UY":[-32.5,-55.8],"DM":[15.4,-61.4],"ML":[17.6,-4.0],
+    "DZ":[28.0,1.7],"CA":[56.1,-106.3],"EG":[26.8,30.8],"AN":[12.2,-68.9],
+    "SV":[13.8,-88.9],"IS":[64.9,-19.0],"NP":[28.4,84.1],"MR":[21.0,-10.9],
+    "IT":[41.9,12.6],"GY":[4.9,-58.9],"GN":[9.9,-13.7],"GH":[7.9,-1.0],
+    "GM":[13.4,-16.6],"FI":[61.9,25.7],"GD":[12.3,-61.7],"PE":[-9.2,-75.0],
+    "BH":[26.0,50.6],"EE":[58.6,25.0],"ES":[40.5,-3.7],"TT":[10.7,-61.2],
+    "TH":[15.9,100.9],"TZ":[-6.4,34.9],"CH":[46.8,8.2],"BR":[-14.2,-51.9],
+    "SG":[1.4,103.8],"NR":[-0.5,166.9],"AE":[23.4,53.8],"KR":[35.9,127.8],
+    "WS":[-13.8,-172.1],"GB":[55.4,-3.4],"AU":[-25.3,133.8],"GE":[42.3,43.4],
+    "TJ":[38.9,71.3],"KZ":[48.0,68.0],"MD":[47.4,28.4],"RU":[61.5,105.3],
+    "UZ":[41.4,64.6],"KG":[41.2,74.8],"AZ":[40.1,47.6],"IO":[-6.3,71.9],
+    "SZ":[-26.5,31.5],"AG":[17.1,-61.8],"CF":[6.6,20.9],"LC":[13.9,-61.0],
+    "BA":[43.9,17.7],"CG":[-4.3,15.3],"AM":[40.1,45.0],
+}
+
 ORG_ICONS = {
-    "World Bank":"🏦","International Monetary Fund":"💰",
-    "European Union":"🇪🇺","Organization of African Unity":"🌍",
-    "International Organization Staff":"🏛️",
+    "World Bank":"WB","International Monetary Fund":"IMF",
+    "European Union":"EU","Organization of African Unity":"OAU",
+    "International Organization Staff":"IO",
 }
 
 
 def get_iso(country_name):
     if country_name in ORGANIZATIONS or country_name in ("Unknown Code","Unknown"):
-        return None, None
+        return None
     if country_name in COUNTRY_ISO:
-        a2 = COUNTRY_ISO[country_name]
-        return a2.lower(), a2.lower()
-    return None, None
+        return COUNTRY_ISO[country_name].lower()
+    return None
+
+
+def get_coords(iso2):
+    if iso2:
+        c = COUNTRY_COORDS.get(iso2.upper())
+        if c: return c
+    return None
 
 
 def parse_plate(text):
-    clean = text.replace(" ","").upper()
+    clean = text.replace(" ","").replace("-","").replace(".","").upper()
+    clean = re.sub(r'[^A-Z0-9]', '', clean)
     m1 = re.search(r'^([ADCS])([A-Z]{2})(\d+)$', clean)
     m2 = re.search(r'^(\d+)([A-Z]{2})([ADCS])$', clean)
     if m1: tc, cc, d = m1.group(1), m1.group(2), m1.group(3)
@@ -171,35 +225,41 @@ def parse_plate(text):
     vt = plate_types.get(tc, "Unknown")
     country = ofm_codes.get(cc, "Unknown Code")
     amb = d in ("0001","1")
+    scan_type = "Ambassador" if amb else vt
     if amb: vt = "Ambassador (" + vt + ")"
-    iso2, _ = get_iso(country)
+    iso2 = get_iso(country)
     is_org = country in ORGANIZATIONS
+    coords = get_coords(iso2) if iso2 else None
     return {
         "plate": clean,
         "type": vt,
+        "scan_type": scan_type,
         "code": cc,
         "country": country,
         "ambassador": amb,
         "iso2": iso2,
         "is_org": is_org,
-        "org_icon": ORG_ICONS.get(country, "🏛️") if is_org else None,
+        "org_icon": ORG_ICONS.get(country, "ORG") if is_org else None,
+        "lat": coords[0] if coords else None,
+        "lng": coords[1] if coords else None,
     }
 
 
-def record_scan(code, country):
-    try: supabase.table("scans").insert({"code":code,"country":country}).execute()
-    except: pass
+def record_scan(code, country, plate_type):
+    try:
+        supabase.table("scans").insert({
+            "code": code,
+            "country": country,
+            "plate_type": plate_type
+        }).execute()
+    except:
+        # Fallback if plate_type column doesn't exist yet
+        try:
+            supabase.table("scans").insert({"code": code, "country": country}).execute()
+        except:
+            pass
 
 
-def get_trivia(name, is_org=False):
-    seed = random.randint(1, 10000)
-    kind = "organization" if is_org else "country"
-    prompt = f"Give me one surprising and fun trivia fact about the {kind} '{name}'. Keep it to 1-2 sentences. Random seed: {seed}. Respond with ONLY the fact."
-    try: return model.generate_content(prompt).text.strip()
-    except: return None
-
-
-# --- ROUTES ---
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -211,60 +271,85 @@ def lookup():
     plate_text = data.get("plate", "")
     if not plate_text:
         return jsonify({"error": "No plate provided"}), 400
-
     result = parse_plate(plate_text)
     if not result or result["country"] == "Unknown Code":
         return jsonify({"error": "Could not recognize a valid diplomatic plate format."}), 404
-
-    record_scan(result["code"], result["country"])
-    trivia = get_trivia(result["country"], result["is_org"])
-    result["trivia"] = trivia
+    record_scan(result["code"], result["country"], result["scan_type"])
     return jsonify(result)
+
+
+@app.route("/api/trivia")
+def trivia():
+    name = request.args.get("name", "")
+    is_org = request.args.get("org", "false") == "true"
+    if not name:
+        return jsonify({"trivia": None})
+    seed = random.randint(1, 10000)
+    kind = "organization" if is_org else "country"
+    prompt = f"Give me one surprising and fun trivia fact about the {kind} '{name}'. Keep it to 1-2 sentences. Random seed: {seed}. Respond with ONLY the fact."
+    try:
+        resp = model.generate_content(prompt)
+        return jsonify({"trivia": resp.text.strip()})
+    except:
+        return jsonify({"trivia": None})
 
 
 @app.route("/api/scan-image", methods=["POST"])
 def scan_image():
     if "image" not in request.files:
         return jsonify({"error": "No image provided"}), 400
-
     file = request.files["image"]
-    image = Image.open(file.stream)
+    img_bytes = file.read()
+    img_buffer = io.BytesIO(img_bytes)
+    try:
+        image = Image.open(img_buffer)
+        if image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+    except Exception as e:
+        return jsonify({"error": f"Could not process image: {str(e)}"}), 400
 
-    prompt = """Look at this image of a vehicle or license plate. Find the US diplomatic license plate.
-    It will either be in the format "[Letter][Two Letters] [Numbers]" (like DAF 1234)
-    OR reversed "[Numbers] [Two Letters][Letter]" (like 1234 AFD).
-    Respond ONLY with the exact text written on the license plate (letters and numbers).
-    If you cannot read it clearly, respond with the exact word: NONE."""
+    max_dim = 1500
+    if max(image.size) > max_dim:
+        ratio = max_dim / max(image.size)
+        new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
+        image = image.resize(new_size, Image.LANCZOS)
+
+    prompt = """You are looking at a photo that may contain a US diplomatic license plate.
+
+US diplomatic plates come in these formats:
+- Standard: One letter prefix (D, A, C, or S), then two letters (country code), then numbers. Example: DAF 1234
+- Reversed: Numbers first, then two letters (country code), then one letter suffix (D, A, C, or S). Example: 1234 AFD
+
+The prefix/suffix letters mean: D = Diplomat, A = UN Secretariat, C = Consular, S = Embassy Staff
+
+Look carefully at the license plate in the image. Read ALL characters on the plate.
+Respond with ONLY the letters and numbers from the plate, nothing else.
+If you cannot find or read a diplomatic plate, respond with exactly: NONE"""
 
     try:
         response = model.generate_content([prompt, image])
         ai_result = response.text.strip().upper()
-
-        if ai_result == "NONE":
-            return jsonify({"error": "Could not read a diplomatic plate from this image."}), 404
-
+        ai_result = re.sub(r'[^A-Z0-9\s]', '', ai_result).strip()
+        if ai_result == "NONE" or not ai_result:
+            return jsonify({"error": "Could not read a diplomatic plate from this image. Try typing it manually."}), 404
         result = parse_plate(ai_result)
         if not result or result["country"] == "Unknown Code":
             return jsonify({"error": f"AI read '{ai_result}' but it doesn't match a known format.", "ai_read": ai_result}), 404
-
-        record_scan(result["code"], result["country"])
-        trivia = get_trivia(result["country"], result["is_org"])
-        result["trivia"] = trivia
+        record_scan(result["code"], result["country"], result["scan_type"])
+        result["ai_read"] = ai_result
         return jsonify(result)
-
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"AI processing error: {str(e)}"}), 500
 
 
 @app.route("/api/leaderboard")
 def leaderboard():
     period = request.args.get("period", "all")
-
     try:
         resp = supabase.table("scans").select("*").execute()
         data = resp.data
         if not data:
-            return jsonify({"entries": [], "total_scans": 0, "total_countries": 0, "top_country": None})
+            return jsonify({"entries": [], "total_scans": 0, "total_countries": 0, "top_country": None, "type_counts": {}})
 
         from collections import Counter
         now = datetime.utcnow()
@@ -277,12 +362,13 @@ def leaderboard():
             filtered = [r for r in data if "created_at" in r and r["created_at"][:7] == prefix]
 
         counts = Counter(r["country"] for r in filtered)
-        entries = [{"country": c, "scans": s, "iso2": get_iso(c)[0]} for c, s in counts.most_common()]
-
-        # Add org icons
+        entries = [{"country": c, "scans": s, "iso2": get_iso(c)} for c, s in counts.most_common()]
         for e in entries:
             if e["country"] in ORGANIZATIONS:
-                e["org_icon"] = ORG_ICONS.get(e["country"], "🏛️")
+                e["org_icon"] = ORG_ICONS.get(e["country"], "ORG")
+
+        # Type breakdown
+        type_counts = Counter(r.get("plate_type", "Unknown") for r in filtered)
 
         top = entries[0]["country"] if entries else None
         return jsonify({
@@ -290,6 +376,7 @@ def leaderboard():
             "total_scans": sum(e["scans"] for e in entries),
             "total_countries": len(entries),
             "top_country": top,
+            "type_counts": dict(type_counts),
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
