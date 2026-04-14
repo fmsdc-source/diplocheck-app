@@ -79,7 +79,7 @@ ofm_codes = {
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GY":"Chile","HD":"Argentina","HM":"Andorra",
     "JT":"Croatia","JY":"Cyprus","LJ":"Israel",
-    "MG":"Unknown","NX":"Malaysia","RV":"San Marino",
+    "MG":"Unknown","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
     "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
 
