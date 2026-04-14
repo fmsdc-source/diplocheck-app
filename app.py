@@ -16,7 +16,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash-lite')
+model = genai.GenerativeModel('gemini-2.5-flash')
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ofm_codes = {
@@ -74,7 +74,13 @@ ofm_codes = {
     "XF":"Turkey","XY":"Unknown","XZ":"Australia",
     "YA":"Unknown","YG":"Georgia","YJ":"Tajikistan","YK":"Kazakhstan",
     "YM":"Hong Kong / Moldova","YR":"Russia","YT":"Turkmenistan",
-    "YU":"Uzbekistan","YY":"Kyrgyzstan","YZ":"Azerbaijan"
+    "YU":"Uzbekistan","YY":"Kyrgyzstan","YZ":"Azerbaijan",
+    # Added from DiploPlates / pl8s.com cross-reference
+    "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
+    "GY":"Chile","HD":"Argentina","HM":"Andorra",
+    "JT":"Croatia","JY":"Cyprus","LJ":"Israel",
+    "MG":"Unknown","NX":"Malaysia","RV":"San Marino",
+    "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
 
 plate_types = {"D":"Diplomat","C":"Consular","S":"Embassy Staff","A":"UN Secretariat"}
@@ -140,6 +146,7 @@ COUNTRY_ISO = {
     "Tajikistan":"TJ","Kazakhstan":"KZ","Russia":"RU",
     "Turkmenistan":"TM","Uzbekistan":"UZ","Kyrgyzstan":"KG",
     "Azerbaijan":"AZ","United Kingdom":"GB","Suriname":"SR",
+    "Andorra":"AD","Croatia":"HR","San Marino":"SM",
 }
 
 # Country coordinates for map centering
@@ -190,6 +197,7 @@ COUNTRY_COORDS = {
     "UZ":[41.4,64.6],"KG":[41.2,74.8],"AZ":[40.1,47.6],"IO":[-6.3,71.9],
     "SZ":[-26.5,31.5],"AG":[17.1,-61.8],"CF":[6.6,20.9],"LC":[13.9,-61.0],
     "BA":[43.9,17.7],"CG":[-4.3,15.3],"AM":[40.1,45.0],
+    "AD":[42.5,1.5],"HR":[45.1,15.2],"SM":[43.9,12.4],
 }
 
 ORG_ICONS = {
@@ -368,7 +376,7 @@ def leaderboard():
                 e["org_icon"] = ORG_ICONS.get(e["country"], "ORG")
 
         # Type breakdown
-        type_counts = Counter((r.get("plate_type") or "Unknown") for r in filtered)
+        type_counts = Counter(r.get("plate_type", "Unknown") for r in filtered)
 
         top = entries[0]["country"] if entries else None
         return jsonify({
