@@ -78,7 +78,7 @@ ofm_codes = {
     # Added from DiploPlates / pl8s.com cross-reference
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GY":"Chile","HD":"Argentina","HM":"Andorra",
-    "JT":"Croatia","JY":"Cyprus","LJ":"Israel", "CQ":"South Sudan", "CR":"Timor-Leste"
+    "JT":"Croatia","JY":"Cyprus","LJ":"Israel", "CQ":"South Sudan", "CR":"Timor-Leste",
     "MG":"United Kingdom","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
     "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
