@@ -42,7 +42,7 @@ ofm_codes = {
     "HB":"Tonga","HL":"St. Lucia","HN":"Mongolia","HV":"Belgium",
     "HW":"Guatemala","HX":"Benin","HY":"Guinea-Bissau","HZ":"Haiti",
     "JB":"Honduras","JC":"Kuwait","JD":"Mauritius","JF":"Nigeria","JG":"Portugal",
-    "JH":"Somalia","JJ":"Chad","JK":"Turkey","JM":"Yugoslavia","JP":"Tunisia",
+    "JH":"Somalia","JJ":"Chad","JK":"Turkey","JM":"Serbia","JP":"Tunisia",
     "JQ":"Togo","JS":"Slovenia",
     "KB":"Monaco","KD":"Eritrea","KG":"Equatorial Guinea","KH":"Hungary",
     "KJ":"Lithuania","KK":"Fiji","KL":"Jordan","KM":"Jamaica","KN":"Gabon",
@@ -78,7 +78,7 @@ ofm_codes = {
     # Added from DiploPlates / pl8s.com cross-reference
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GY":"Chile","HD":"Argentina","HM":"Andorra",
-    "JT":"Croatia","JY":"Cyprus","LJ":"Israel",
+    "JT":"Croatia","JY":"Cyprus","LJ":"Israel", "CQ":"South Sudan", "CR":"Timor-Leste"
     "MG":"United Kingdom","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
     "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
