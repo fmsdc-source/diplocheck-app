@@ -71,15 +71,15 @@ ofm_codes = {
     "VF":"Thailand","VG":"Tanzania","VH":"Switzerland","VJ":"Brazil",
     "VK":"Singapore","VL":"Swaziland","VM":"Nauru",
     "WB":"United Arab Emirates","WD":"South Korea","WM":"Western Samoa","WZ":"United Kingdom",
-    "XF":"Turkey","XY":"Unknown","XZ":"Australia",
-    "YA":"Unknown","YG":"Georgia","YJ":"Tajikistan","YK":"Kazakhstan",
+    "XF":"Turkey","XY":"Ireland","XZ":"Australia",
+    "YA":"Armenia","YG":"Georgia","YJ":"Tajikistan","YK":"Kazakhstan",
     "YM":"Hong Kong / Moldova","YR":"Russia","YT":"Turkmenistan",
     "YU":"Uzbekistan","YY":"Kyrgyzstan","YZ":"Azerbaijan",
     # Added from DiploPlates / pl8s.com cross-reference
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GY":"Chile","HD":"Argentina","HM":"Andorra",
     "JT":"Croatia","JY":"Cyprus","LJ":"Israel",
-    "MG":"Unknown","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
+    "MG":"United Kingdom","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
     "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
 
