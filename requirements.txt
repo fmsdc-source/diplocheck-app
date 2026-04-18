@@ -3,3 +3,4 @@ gunicorn
 Pillow
 google-generativeai
 supabase
+PyJWT
