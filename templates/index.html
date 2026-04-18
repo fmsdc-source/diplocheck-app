@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -161,7 +162,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .points-card .streak-row{display:flex;gap:16px;margin-top:12px;font-size:12px;opacity:.7}
 .progress-section{padding:0 24px;margin-bottom:20px}
 .progress-section h3{font-size:16px;font-weight:700;margin-bottom:12px}
-.collection-map{border-radius:var(--rl);overflow:hidden;height:260px;box-shadow:0 2px 10px rgba(0,0,0,.04);margin-bottom:16px}
+.collection-map{border-radius:var(--rl);overflow:hidden;height:300px;box-shadow:0 2px 10px rgba(0,0,0,.04);margin-bottom:16px}
 .continent-progress{background:var(--card);border-radius:var(--rl);padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:12px}
 .cont-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bg)}
 .cont-row:last-child{border-bottom:none}
@@ -584,7 +585,12 @@ async function loadCollection(){
     html+=`<div class="collection-stats"><div class="coll-stat"><div class="val">${spotted.length}</div><div class="lbl">Spotted</div></div><div class="coll-stat"><div class="val">${data.total_possible}</div><div class="lbl">Total</div></div><div class="coll-stat"><div class="val gold">${pts.ambassadors}</div><div class="lbl">Ambassadors</div></div></div>`;
 
     // Map
-    html+=`<div class="progress-section"><h3>Progress map</h3><div class="collection-map" id="collMapDiv"></div>`;
+    html+=`<div class="progress-section"><h3>Progress map</h3><div class="collection-map" id="collMapDiv"></div>
+    <div style="display:flex;gap:16px;justify-content:center;margin-bottom:16px;font-size:11px;color:var(--text-s)">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:#5ba8d9;display:inline-block"></span>Spotted</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:#ff9f0a;display:inline-block"></span>Ambassador</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:12px;height:12px;border-radius:3px;background:#e0e6ec;display:inline-block"></span>Not spotted</span>
+    </div>`;
 
     // Continent progress
     const contCounts={};const contTotals={};
@@ -610,20 +616,49 @@ async function loadCollection(){
     content.innerHTML=html;
 
     // Render map
-    setTimeout(()=>{
+    setTimeout(async ()=>{
         if(collMap){collMap.remove();collMap=null;}
         const mapEl=document.getElementById('collMapDiv');
         if(!mapEl)return;
-        collMap=L.map(mapEl,{zoomControl:false,attributionControl:false,minZoom:1}).setView([20,0],2);
+        collMap=L.map(mapEl,{zoomControl:false,attributionControl:false,minZoom:1,maxBounds:[[-85,-180],[85,180]]}).setView([20,0],2);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(collMap);
-        // All countries as gray dots
-        allC.forEach(c=>{
-            const isSpotted=spottedSet.has(c.country);const isAmb=ambSet.has(c.country);
-            const color=isAmb?'#ff9f0a':isSpotted?'#34c759':'#d0d8e0';
-            const radius=isAmb?7:isSpotted?6:3;
-            const opacity=isSpotted?0.9:0.4;
-            L.circleMarker([c.lat,c.lng],{radius,fillColor:color,fillOpacity:opacity,color:isAmb?'#fff':'transparent',weight:isAmb?2:0}).bindTooltip(c.country).addTo(collMap);
-        });
+        // Load world GeoJSON and shade countries
+        try{
+            const geoResp=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+            const topo=await geoResp.json();
+            const countries=topojson.feature(topo,topo.objects.countries);
+            // ISO numeric → alpha-2 mapping
+            const numToA2={"4":"AF","8":"AL","12":"DZ","24":"AO","32":"AR","36":"AU","40":"AT","44":"BS","48":"BH","50":"BD","51":"AM","52":"BB","56":"BE","64":"BT","68":"BO","70":"BA","72":"BW","76":"BR","84":"BZ","96":"BN","100":"BG","104":"MM","108":"BI","116":"KH","120":"CM","124":"CA","132":"CV","140":"CF","144":"LK","148":"TD","152":"CL","156":"CN","170":"CO","174":"KM","178":"CG","180":"CD","188":"CR","191":"HR","192":"CU","196":"CY","203":"CZ","204":"BJ","208":"DK","212":"DM","214":"DO","218":"EC","818":"EG","222":"SV","226":"GQ","232":"ER","233":"EE","231":"ET","242":"FJ","246":"FI","250":"FR","266":"GA","270":"GM","268":"GE","276":"DE","288":"GH","300":"GR","308":"GD","320":"GT","324":"GN","624":"GW","328":"GY","332":"HT","340":"HN","348":"HU","352":"IS","356":"IN","360":"ID","364":"IR","368":"IQ","372":"IE","376":"IL","380":"IT","388":"JM","392":"JP","400":"JO","398":"KZ","404":"KE","296":"KI","408":"KP","410":"KR","414":"KW","417":"KG","418":"LA","428":"LV","422":"LB","426":"LS","430":"LR","434":"LY","438":"LI","440":"LT","442":"LU","450":"MG","454":"MW","458":"MY","462":"MV","466":"ML","470":"MT","478":"MR","480":"MU","484":"MX","492":"MC","496":"MN","498":"MD","504":"MA","508":"MZ","512":"OM","516":"NA","524":"NP","528":"NL","554":"NZ","558":"NI","562":"NE","566":"NG","578":"NO","586":"PK","585":"PW","591":"PA","598":"PG","600":"PY","604":"PE","608":"PH","616":"PL","620":"PT","634":"QA","642":"RO","643":"RU","646":"RW","662":"LC","670":"VC","882":"WS","674":"SM","678":"ST","682":"SA","686":"SN","688":"RS","690":"SC","694":"SL","702":"SG","703":"SK","705":"SI","706":"SO","710":"ZA","724":"ES","144":"LK","736":"SD","740":"SR","748":"SZ","752":"SE","756":"CH","760":"SY","762":"TJ","834":"TZ","764":"TH","768":"TG","776":"TO","780":"TT","788":"TN","792":"TR","795":"TM","800":"UG","804":"UA","784":"AE","826":"GB","858":"UY","860":"UZ","862":"VE","704":"VN","887":"YE","894":"ZM","716":"ZW","499":"ME","728":"SS","626":"TL","20":"AD"};
+            // Build spotted ISO2 set (uppercase)
+            const spottedIso=new Set();const ambIso=new Set();
+            spotted.forEach(s=>{if(s.iso2){spottedIso.add(s.iso2.toUpperCase());if(s.ambassador)ambIso.add(s.iso2.toUpperCase());}});
+
+            L.geoJSON(countries,{
+                style:function(feature){
+                    const a2=numToA2[feature.id];
+                    if(!a2)return{fillColor:'#e0e6ec',fillOpacity:0.4,color:'#cdd5de',weight:0.5};
+                    const isAmb=ambIso.has(a2);
+                    const isSpotted=spottedIso.has(a2);
+                    if(isAmb)return{fillColor:'#ff9f0a',fillOpacity:0.7,color:'#e08800',weight:1.5};
+                    if(isSpotted)return{fillColor:'#5ba8d9',fillOpacity:0.6,color:'#3a8cc0',weight:1};
+                    return{fillColor:'#e0e6ec',fillOpacity:0.4,color:'#cdd5de',weight:0.5};
+                },
+                onEachFeature:function(feature,layer){
+                    const a2=numToA2[feature.id];
+                    if(a2){
+                        const isAmb=ambIso.has(a2);const isSpotted=spottedIso.has(a2);
+                        // Find country name
+                        const match=allC.find(c=>c.iso2===a2.toLowerCase());
+                        if(match){
+                            let tip=match.country;
+                            if(isAmb)tip+=' (Ambassador)';
+                            else if(isSpotted)tip+=' (Spotted)';
+                            layer.bindTooltip(tip);
+                        }
+                    }
+                }
+            }).addTo(collMap);
+        }catch(e){console.log('GeoJSON load error',e);}
     },200);
     }catch(e){content.innerHTML=`<div class="empty-state">Could not load collection.</div>`;}
 }
