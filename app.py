@@ -65,7 +65,7 @@ ofm_codes = {
     "TC":"Mali","TF":"Algeria","TG":"Canada","TH":"Egypt",
     "TJ":"East Germany (Discontinued)","TK":"Netherlands Antilles","TL":"El Salvador",
     "TM":"Iceland","TN":"Nepal","TP":"Mauritania","TQ":"Mali","TR":"Italy",
-    "TS":"Iraq (Discontinued)","TT":"Guyana","TU":"Guinea","TV":"Ghana",
+    "TS":"Iraq","TT":"Guyana","TU":"Guinea","TV":"Ghana",
     "TW":"Gambia","TX":"Finland","TY":"Grenada","TZ":"Peru",
     "UA":"Bahrain","UF":"Estonia","UH":"Spain","UX":"Trinidad and Tobago",
     "VF":"Thailand","VG":"Tanzania","VH":"Switzerland","VJ":"Brazil",
@@ -78,8 +78,8 @@ ofm_codes = {
     # Added from DiploPlates / pl8s.com cross-reference
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GY":"Chile","HD":"Argentina","HM":"Andorra",
-    "JT":"Croatia","JY":"Cyprus","LJ":"Israel", "CQ":"South Sudan", "CR":"Timor-Leste",
-    "MG":"United Kingdom","MM":"United Kingdom","NX":"Malaysia","RV":"San Marino",
+    "GK":"Montenegro","JT":"Croatia","JY":"Cyprus","LJ":"Israel","CQ":"South Sudan","CR":"Timor-Leste",
+    "MG":"United Kingdom","MM":"United Kingdom","NX":"Malaysia","RJ":"Palau","RV":"San Marino",
     "SF":"Czech Republic","XA":"Bangladesh","XC":"Fiji"
 }
 
@@ -89,7 +89,7 @@ ORGANIZATIONS = {
     "Organization of African Unity","World Bank","International Organization Staff",
     "International Monetary Fund","European Union","U.S.S.R. (Discontinued)",
     "South Africa (Discontinued)","South Yemen (Discontinued)",
-    "East Germany (Discontinued)","Iraq (Discontinued)",
+    "East Germany (Discontinued)",
 }
 
 COUNTRY_ISO = {
@@ -147,6 +147,7 @@ COUNTRY_ISO = {
     "Turkmenistan":"TM","Uzbekistan":"UZ","Kyrgyzstan":"KG",
     "Azerbaijan":"AZ","United Kingdom":"GB","Suriname":"SR",
     "Andorra":"AD","Croatia":"HR","San Marino":"SM",
+    "South Sudan":"SS","Timor-Leste":"TL","Serbia":"RS","Montenegro":"ME","Armenia":"AM",
 }
 
 # Country coordinates for map centering
@@ -198,6 +199,7 @@ COUNTRY_COORDS = {
     "SZ":[-26.5,31.5],"AG":[17.1,-61.8],"CF":[6.6,20.9],"LC":[13.9,-61.0],
     "BA":[43.9,17.7],"CG":[-4.3,15.3],"AM":[40.1,45.0],
     "AD":[42.5,1.5],"HR":[45.1,15.2],"SM":[43.9,12.4],
+    "SS":[6.9,31.3],"TL":[-8.9,125.7],"RS":[44.0,21.0],"ME":[42.7,19.4],"PW":[7.5,134.6],
 }
 
 ORG_ICONS = {
