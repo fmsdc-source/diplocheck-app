@@ -516,6 +516,13 @@ def user_leaderboard():
     try:
         resp = supabase.table("scans").select("*").not_.is_("user_id", "null").execute()
         data = resp.data or []
+        # Load all profiles for display names
+        profiles = {}
+        try:
+            pr = supabase.table("profiles").select("*").execute()
+            for p in (pr.data or []):
+                profiles[p["id"]] = p.get("username") or ""
+        except: pass
         # Group by user_id
         by_user = {}
         for s in data:
@@ -527,15 +534,10 @@ def user_leaderboard():
         users = []
         for uid, scans in by_user.items():
             pts = calc_points(scans)
-            # Get email from first scan's user or use truncated id
-            email = uid[:8]
-            # Try to get user info
-            try:
-                user_resp = supabase.auth.admin.get_user_by_id(uid)
-                if user_resp and user_resp.user:
-                    email = user_resp.user.email or uid[:8]
-            except: pass
-            display = email.split("@")[0] if "@" in email else email
+            # Use username from profiles, fallback to truncated id
+            display = profiles.get(uid, "")
+            if not display:
+                display = uid[:8]
             users.append({
                 "user_id": uid, "display_name": display,
                 "points": pts["total"], "countries": pts["countries"],
@@ -545,6 +547,45 @@ def user_leaderboard():
             })
         users.sort(key=lambda x: x["points"], reverse=True)
         return jsonify({"users": users[:50]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/profile", methods=["GET"])
+def get_profile():
+    user_id = get_user_id(request)
+    if not user_id: return jsonify({"error": "Not authenticated"}), 401
+    try:
+        resp = supabase.table("profiles").select("*").eq("id", user_id).execute()
+        if resp.data and len(resp.data) > 0:
+            return jsonify(resp.data[0])
+        return jsonify({"id": user_id, "username": ""})
+    except:
+        return jsonify({"id": user_id, "username": ""})
+
+@app.route("/api/profile", methods=["POST"])
+def set_profile():
+    user_id = get_user_id(request)
+    if not user_id: return jsonify({"error": "Not authenticated"}), 401
+    data = request.json
+    username = (data.get("username") or "").strip()
+    if not username or len(username) < 2:
+        return jsonify({"error": "Username must be at least 2 characters"}), 400
+    if len(username) > 20:
+        return jsonify({"error": "Username must be 20 characters or less"}), 400
+    # Only allow alphanumeric, underscores, hyphens
+    import re as regex
+    if not regex.match(r'^[a-zA-Z0-9_-]+$', username):
+        return jsonify({"error": "Username can only contain letters, numbers, underscores, hyphens"}), 400
+    try:
+        # Check if username is taken by someone else
+        existing = supabase.table("profiles").select("id").eq("username", username).execute()
+        if existing.data:
+            for e in existing.data:
+                if e["id"] != user_id:
+                    return jsonify({"error": "Username already taken"}), 409
+        # Upsert profile
+        supabase.table("profiles").upsert({"id": user_id, "username": username}).execute()
+        return jsonify({"id": user_id, "username": username})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
