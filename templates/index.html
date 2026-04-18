@@ -232,6 +232,18 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 </div>
 </div>
 
+<!-- USERNAME MODAL -->
+<div class="modal-overlay" id="usernameModal">
+<div class="modal" style="position:relative">
+    <h2>Choose a username</h2>
+    <p class="sub">This is how you'll appear on the leaderboard</p>
+    <input class="modal-input" id="usernameInput" type="text" placeholder="e.g. diplospotter42" maxlength="20" autocomplete="off" spellcheck="false" style="font-family:var(--mono);letter-spacing:.05em">
+    <p style="font-size:11px;color:var(--text-t);margin-bottom:12px">2-20 characters, letters, numbers, underscores, hyphens</p>
+    <button class="modal-submit" onclick="saveUsername()">Save username</button>
+    <div class="modal-error" id="usernameError"></div>
+</div>
+</div>
+
 <!-- HOME -->
 <div class="page active" id="page-home">
     <div class="auth-bar" id="authBar">
@@ -240,6 +252,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </div>
     <div class="auth-bar" id="userBar" style="display:none">
         <span class="user-badge"><span class="user-dot"></span><span id="userName"></span></span>
+        <button class="auth-btn" onclick="openUsernameEdit()" style="font-size:11px;padding:6px 12px">Edit name</button>
         <button class="auth-btn" onclick="doLogout()">Log out</button>
     </div>
     <div class="home-hero" style="padding-top:0">
@@ -395,18 +408,53 @@ async function initAuth() {
     });
 }
 
-function setUser(session) {
+let currentUsername = '';
+
+async function setUser(session) {
     currentUser = session.user;
     accessToken = session.access_token;
     document.getElementById('authBar').style.display = 'none';
     document.getElementById('userBar').style.display = 'flex';
-    document.getElementById('userName').textContent = currentUser.email.split('@')[0];
+    // Load username from profile
+    try {
+        const resp = await fetch('/api/profile', {headers: authHeaders()});
+        const profile = await resp.json();
+        currentUsername = profile.username || '';
+    } catch(e) { currentUsername = ''; }
+    if (currentUsername) {
+        document.getElementById('userName').textContent = currentUsername;
+    } else {
+        document.getElementById('userName').textContent = currentUser.email.split('@')[0];
+        // Prompt for username on first login
+        setTimeout(() => document.getElementById('usernameModal').classList.add('show'), 500);
+    }
 }
 
 function clearUser() {
-    currentUser = null; accessToken = null;
+    currentUser = null; accessToken = null; currentUsername = '';
     document.getElementById('authBar').style.display = 'flex';
     document.getElementById('userBar').style.display = 'none';
+}
+
+async function saveUsername() {
+    const input = document.getElementById('usernameInput');
+    const err = document.getElementById('usernameError');
+    const username = input.value.trim();
+    if (!username) { err.textContent = 'Please enter a username'; err.classList.add('show'); return; }
+    try {
+        const resp = await fetch('/api/profile', {method: 'POST', headers: authHeaders(), body: JSON.stringify({username})});
+        const data = await resp.json();
+        if (!resp.ok) { err.textContent = data.error; err.classList.add('show'); return; }
+        currentUsername = data.username;
+        document.getElementById('userName').textContent = currentUsername;
+        document.getElementById('usernameModal').classList.remove('show');
+        err.classList.remove('show');
+    } catch(e) { err.textContent = 'Could not save username.'; err.classList.add('show'); }
+}
+
+function openUsernameEdit() {
+    document.getElementById('usernameInput').value = currentUsername;
+    document.getElementById('usernameModal').classList.add('show');
 }
 
 function openAuth(isSignup) {
@@ -579,7 +627,7 @@ async function loadCollection(){
     const spottedSet=new Set(spotted.map(s=>s.country));const ambSet=new Set(spotted.filter(s=>s.ambassador).map(s=>s.country));
 
     // Points card
-    let html=`<div class="points-card"><div class="pts-label">Your points</div><div class="pts">${pts.total}</div><div class="streak-row"><span>${pts.scan_count} scans</span><span>${pts.countries} countries</span><span>${pts.ambassadors} ambassadors</span>${pts.streak>0?`<span>${pts.streak}d streak</span>`:''}</div></div>`;
+    let html=`<div class="points-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div class="pts-label">Your points</div>${currentUsername?`<span style="font-size:13px;opacity:.7;font-weight:600">${currentUsername}</span>`:''}</div><div class="pts">${pts.total}</div><div class="streak-row"><span>${pts.scan_count} scans</span><span>${pts.countries} countries</span><span>${pts.ambassadors} ambassadors</span>${pts.streak>0?`<span>${pts.streak}d streak</span>`:''}</div></div>`;
 
     // Stats
     html+=`<div class="collection-stats"><div class="coll-stat"><div class="val">${spotted.length}</div><div class="lbl">Spotted</div></div><div class="coll-stat"><div class="val">${data.total_possible}</div><div class="lbl">Total</div></div><div class="coll-stat"><div class="val gold">${pts.ambassadors}</div><div class="lbl">Ambassadors</div></div></div>`;
