@@ -7,240 +7,275 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-    --bg: #dce8f0;
-    --card: #fff;
-    --text: #0b1a2e;
-    --text-s: #4a6280;
-    --text-t: #8da3ba;
-    --border: #c4d4e2;
-    --accent: #0b1a2e;
-    --green: #34c759;
-    --gold: #ff9f0a;
-    --r: 16px; --rl: 22px; --rxl: 28px;
-    --font: 'DM Sans', -apple-system, sans-serif; --mono: 'JetBrains Mono', monospace;
+    --bg:#dce8f0;--card:#fff;--text:#0b1a2e;--text-s:#4a6280;--text-t:#8da3ba;
+    --border:#c4d4e2;--accent:#0b1a2e;--green:#34c759;--gold:#ff9f0a;--red:#e63946;
+    --r:16px;--rl:22px;--rxl:28px;
+    --font:'DM Sans',-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-.app { max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg); position: relative; padding-bottom: 80px; }
-.page { display: none; }
-.page.active { display: block; animation: fadeIn 0.3s ease; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:80px}
+.page{display:none}.page.active{display:block;animation:fadeIn .3s ease}
+.header{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.header-back{width:40px;height:40px;border-radius:50%;background:var(--card);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.header-back:active{transform:scale(.92)}
+.page-title{font-size:17px;font-weight:700;text-align:center;flex:1}
 
-.header { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
-.header-back { width: 40px; height: 40px; border-radius: 50%; background: var(--card); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.header-back:active { transform: scale(0.92); }
-.page-title { font-size: 17px; font-weight: 700; text-align: center; flex: 1; }
+/* Auth bar */
+.auth-bar{padding:12px 24px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.auth-btn{padding:8px 16px;border-radius:20px;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text-s);transition:all .2s}
+.auth-btn:hover{border-color:var(--accent);color:var(--text)}
+.auth-btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.auth-btn.primary:hover{opacity:.85}
+.user-badge{font-size:12px;color:var(--text-s);font-weight:600;display:flex;align-items:center;gap:6px}
+.user-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 
-/* HOME */
-.home-hero { padding: 28px 24px 0; }
-.home-hero h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 10px; }
-.home-hero p { font-size: 14px; color: var(--text-s); line-height: 1.6; margin-bottom: 24px; }
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:var(--rl);padding:32px 28px;width:90%;max-width:380px;animation:slideUp .3s ease}
+.modal h2{font-size:22px;font-weight:800;margin-bottom:6px}
+.modal p.sub{font-size:13px;color:var(--text-s);margin-bottom:24px}
+.modal-input{width:100%;padding:14px 16px;font-family:var(--font);font-size:14px;border:2px solid var(--border);border-radius:12px;outline:none;margin-bottom:12px;background:var(--bg);color:var(--text)}
+.modal-input:focus{border-color:var(--accent)}
+.modal-submit{width:100%;padding:14px;background:var(--accent);color:white;border:none;border-radius:12px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;margin-top:4px}
+.modal-submit:hover{opacity:.9}
+.modal-switch{font-size:13px;color:var(--text-s);text-align:center;margin-top:16px}
+.modal-switch a{color:var(--accent);font-weight:600;cursor:pointer;text-decoration:none}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-t)}
+.modal-error{font-size:12px;color:var(--red);margin-top:8px;display:none}
+.modal-error.show{display:block}
 
-.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 24px; margin-bottom: 28px; }
-.action-card { background: var(--card); border-radius: var(--rl); padding: 22px 16px; text-align: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.04); border: 1.5px solid transparent; transition: all 0.25s; }
-.action-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
-.action-card:active { transform: scale(0.97); }
-.action-card h3 { font-size: 15px; font-weight: 700; margin-top: 10px; margin-bottom: 3px; }
-.action-card p { font-size: 11px; color: var(--text-s); }
-.action-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; }
+/* Home */
+.home-hero{padding:28px 24px 0}
+.home-hero h1{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-bottom:10px}
+.home-hero p{font-size:14px;color:var(--text-s);line-height:1.6;margin-bottom:24px}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 24px;margin-bottom:28px}
+.action-card{background:var(--card);border-radius:var(--rl);padding:22px 16px;text-align:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.04);border:1.5px solid transparent;transition:all .25s}
+.action-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.action-card:active{transform:scale(.97)}
+.action-card h3{font-size:15px;font-weight:700;margin-top:10px;margin-bottom:3px}
+.action-card p{font-size:11px;color:var(--text-s)}
+.action-icon{width:44px;height:44px;border-radius:12px;background:var(--bg);display:inline-flex;align-items:center;justify-content:center}
+.info-section{padding:0 24px;margin-bottom:28px}
+.info-section h2{font-size:20px;font-weight:700;letter-spacing:-.02em;margin-bottom:14px}
+.info-card{background:var(--card);border-radius:var(--rl);padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:12px}
+.info-card p{font-size:13px;color:var(--text-s);line-height:1.6}
+.info-card .highlight{color:var(--text);font-weight:600}
+.plate-visual{display:flex;align-items:center;justify-content:center;gap:4px;margin:16px 0 12px;font-family:var(--mono)}
+.plate-segment{padding:10px 14px;border-radius:8px;font-size:16px;font-weight:700;text-align:center}
+.seg-type{background:var(--accent);color:white}.seg-country{background:#d0e4f5;color:#1a5a8a}.seg-number{background:#e8eff5;color:var(--text)}
+.seg-label{font-size:9px;color:var(--text-s);text-transform:uppercase;letter-spacing:.06em;display:block;margin-top:4px;font-weight:500}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.type-item{background:var(--bg);border-radius:12px;padding:14px 16px}
+.type-item .letter{font-family:var(--mono);font-size:20px;font-weight:700}
+.type-item .label{font-size:12px;color:var(--text-s);margin-top:2px}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.stat-box{background:var(--bg);border-radius:12px;padding:16px;text-align:center}
+.stat-box .num{font-family:var(--mono);font-size:24px;font-weight:700}
+.stat-box .lbl{font-size:11px;color:var(--text-s);margin-top:4px}
+.contact-btn{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:12px 24px;background:var(--accent);color:white;border-radius:24px;text-decoration:none;font-size:14px;font-weight:600}
 
-.info-section { padding: 0 24px; margin-bottom: 28px; }
-.info-section h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 14px; }
-.info-card { background: var(--card); border-radius: var(--rl); padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 12px; }
-.info-card p { font-size: 13px; color: var(--text-s); line-height: 1.6; }
-.info-card .highlight { color: var(--text); font-weight: 600; }
+/* Scan page */
+.scan-content{padding:0 24px;margin-top:20px}
+.field-label{font-size:11px;font-weight:600;color:var(--text-s);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:block}
+.input-row{display:flex;gap:10px;margin-bottom:16px}
+.text-input{flex:1;padding:16px 18px;font-family:var(--mono);font-size:16px;font-weight:500;background:var(--card);border:2px solid var(--border);border-radius:14px;color:var(--text);letter-spacing:.1em;text-transform:uppercase;outline:none}
+.text-input:focus{border-color:var(--accent)}
+.text-input::placeholder{color:var(--text-t);text-transform:none;letter-spacing:0;font-family:var(--font);font-size:14px;font-weight:400}
+.go-btn{width:56px;border-radius:14px;background:var(--accent);border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.go-btn:active{transform:scale(.92)}
+.or-line{display:flex;align-items:center;gap:16px;color:var(--text-t);font-size:12px;font-weight:500;margin:4px 0 16px}
+.or-line .l{flex:1;height:1px;background:var(--border)}
+.upload-drop{background:var(--card);border:2px dashed var(--border);border-radius:var(--rl);padding:40px 20px;text-align:center;cursor:pointer}
+.upload-drop:hover{border-color:var(--accent)}.upload-drop:active{transform:scale(.98)}
+.upload-drop p{font-size:13px;color:var(--text-s);font-weight:500;margin-top:10px}
+.upload-drop .sub{font-size:11px;color:var(--text-t);margin-top:4px}
+.upload-drop input{display:none}
+.upload-preview{display:none;margin-top:14px;border-radius:var(--rl);overflow:hidden}
+.upload-preview img{width:100%;display:block}
 
-.plate-visual { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 16px 0 12px; font-family: var(--mono); }
-.plate-segment { padding: 10px 14px; border-radius: 8px; font-size: 16px; font-weight: 700; text-align: center; }
-.seg-type { background: var(--accent); color: white; }
-.seg-country { background: #d0e4f5; color: #1a5a8a; }
-.seg-number { background: #e8eff5; color: var(--text); }
-.seg-label { font-size: 9px; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-top: 4px; font-weight: 500; }
+/* Result */
+.result-area{margin-top:20px;display:none}.result-area.show{display:block}
+.result-hero{border-radius:var(--rxl);overflow:hidden;background:var(--card);box-shadow:0 4px 20px rgba(0,0,0,.06);animation:slideUp .4s ease;margin-bottom:16px}
+.result-flag-banner{height:180px;position:relative;overflow:hidden}
+.result-flag-banner img{width:100%;height:100%;object-fit:cover}
+.result-plate-badge{position:absolute;bottom:14px;right:16px;background:rgba(0,0,0,.6);backdrop-filter:blur(10px);padding:6px 14px;border-radius:10px;font-family:var(--mono);font-size:14px;font-weight:600;color:white;letter-spacing:.08em}
+.result-org-banner{height:120px;background:linear-gradient(135deg,#0b1a2e,#1a2e4a);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:rgba(255,255,255,.3);letter-spacing:.12em}
+.result-details{padding:18px 20px}
+.result-type-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.result-type-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.result-type{font-size:13px;color:var(--text-s);font-weight:500}
+.result-country-name{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.amb-banner{background:linear-gradient(135deg,#ff9f0a,#ff6b00);padding:10px 20px;font-size:13px;font-weight:700;color:white}
+.result-map{border-radius:var(--rl);overflow:hidden;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+.trivia-card{background:var(--card);border-radius:var(--rl);padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:16px}
+.trivia-card .label{font-size:11px;font-weight:700;color:var(--text-s);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.trivia-card .fact{font-size:13px;color:var(--text-s);line-height:1.6}
+.trivia-card .fact b{color:var(--text)}
+.trivia-loading{font-size:12px;color:var(--text-t);font-style:italic}
 
-.type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-.type-item { background: var(--bg); border-radius: 12px; padding: 14px 16px; }
-.type-item .letter { font-family: var(--mono); font-size: 20px; font-weight: 700; }
-.type-item .label { font-size: 12px; color: var(--text-s); margin-top: 2px; }
-.type-item.amb { border: 1.5px solid var(--gold); background: #fff8ed; }
+/* Leaderboard */
+.lb-section{padding:0 24px}
+.lb-tabs{display:flex;gap:4px;background:#e0e8ee;border-radius:12px;padding:4px;margin-bottom:20px}
+.lb-tab{flex:1;padding:10px 8px;border:none;border-radius:9px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text-s)}
+.lb-tab.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.lb-filters{display:flex;gap:8px;margin-bottom:20px}
+.lb-pill{padding:10px 18px;border-radius:24px;border:1.5px solid var(--border);background:var(--card);font-family:var(--font);font-size:13px;font-weight:600;color:var(--text-s);cursor:pointer}
+.lb-pill:active{transform:scale(.95)}
+.lb-pill.active{background:var(--accent);color:white;border-color:var(--accent)}
+.lb-metrics{display:flex;gap:10px;margin-bottom:16px}
+.lb-metric{flex:1;background:var(--card);border-radius:var(--r);padding:14px 12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.lb-metric .lbl{font-size:9px;color:var(--text-t);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.lb-metric .val{font-family:var(--mono);font-size:18px;font-weight:700;margin-top:3px}
+.lb-metric .val.txt{font-family:var(--font);font-size:12px}
+.type-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+.type-stat{background:var(--card);border-radius:12px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.type-stat .num{font-family:var(--mono);font-size:18px;font-weight:700}
+.type-stat .lbl{font-size:9px;color:var(--text-s);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.lb-list{background:var(--card);border-radius:var(--rl);padding:4px 18px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:20px}
+.lb-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bg)}
+.lb-row:last-child{border-bottom:none}
+.lb-rank{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0}
+.lb-r1{background:var(--gold)}.lb-r2{background:#8da3ba}.lb-r3{background:#c4956a}.lb-rx{background:var(--bg);color:var(--text-s)}
+.lb-flag{width:26px;border-radius:4px}
+.lb-name{flex:1;font-size:14px;font-weight:600}
+.lb-bar{width:70px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.lb-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .6s ease}
+.lb-count{font-family:var(--mono);font-size:13px;font-weight:600;min-width:28px;text-align:right}
+.lb-pts{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold);min-width:50px;text-align:right}
+.lb-user-meta{font-size:10px;color:var(--text-t);display:flex;gap:8px;margin-top:2px}
 
-.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
-.stat-box { background: var(--bg); border-radius: 12px; padding: 16px; text-align: center; }
-.stat-box .num { font-family: var(--mono); font-size: 24px; font-weight: 700; }
-.stat-box .lbl { font-size: 11px; color: var(--text-s); margin-top: 4px; }
+/* Collection */
+.collection-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:0 24px;margin:20px 0}
+.coll-stat{background:var(--card);border-radius:var(--r);padding:16px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.coll-stat .val{font-family:var(--mono);font-size:22px;font-weight:700}
+.coll-stat .val.gold{color:var(--gold)}
+.coll-stat .lbl{font-size:9px;color:var(--text-t);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:3px}
+.points-card{margin:0 24px 16px;background:linear-gradient(135deg,var(--accent),#1a3050);border-radius:var(--rl);padding:20px;color:white}
+.points-card .pts{font-family:var(--mono);font-size:32px;font-weight:700}
+.points-card .pts-label{font-size:11px;opacity:.5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.points-card .streak-row{display:flex;gap:16px;margin-top:12px;font-size:12px;opacity:.7}
+.progress-section{padding:0 24px;margin-bottom:20px}
+.progress-section h3{font-size:16px;font-weight:700;margin-bottom:12px}
+.collection-map{border-radius:var(--rl);overflow:hidden;height:260px;box-shadow:0 2px 10px rgba(0,0,0,.04);margin-bottom:16px}
+.continent-progress{background:var(--card);border-radius:var(--rl);padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.04);margin-bottom:12px}
+.cont-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--bg)}
+.cont-row:last-child{border-bottom:none}
+.cont-name{flex:1;font-size:13px;font-weight:600}
+.cont-bar{width:80px;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.cont-bar-fill{height:100%;border-radius:3px;background:var(--green);transition:width .6s ease}
+.cont-count{font-size:12px;color:var(--text-s);font-family:var(--mono);min-width:40px;text-align:right}
+.cont-badge{font-size:10px;background:var(--gold);color:white;padding:2px 8px;border-radius:10px;font-weight:700}
+.spotted-list{background:var(--card);border-radius:var(--rl);padding:4px 18px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.spot-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bg)}
+.spot-row:last-child{border-bottom:none}
+.spot-flag{width:28px;border-radius:4px}
+.spot-name{flex:1;font-size:14px;font-weight:600}
+.spot-count{font-size:12px;color:var(--text-s);font-family:var(--mono)}
+.spot-amb{width:20px;height:20px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;font-weight:700;flex-shrink:0}
+.login-prompt{text-align:center;padding:60px 24px;color:var(--text-s)}
+.login-prompt h3{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
+.login-prompt p{font-size:14px;margin-bottom:20px;line-height:1.5}
 
-/* SCAN */
-.scan-content { padding: 0 24px; margin-top: 20px; }
-.field-label { font-size: 11px; font-weight: 600; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
-.input-row { display: flex; gap: 10px; margin-bottom: 16px; }
-.text-input { flex: 1; padding: 16px 18px; font-family: var(--mono); font-size: 16px; font-weight: 500; background: var(--card); border: 2px solid var(--border); border-radius: 14px; color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; outline: none; }
-.text-input:focus { border-color: var(--accent); }
-.text-input::placeholder { color: var(--text-t); text-transform: none; letter-spacing: 0; font-family: var(--font); font-size: 14px; font-weight: 400; }
-.go-btn { width: 56px; border-radius: 14px; background: var(--accent); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.go-btn:active { transform: scale(0.92); }
+/* Shared */
+.loading{display:none;text-align:center;padding:36px 24px;color:var(--text-s);font-size:13px}
+.loading.show{display:block}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
+.error-msg{display:none;margin:16px 0;background:#fff2f2;border-radius:var(--r);padding:14px 18px;color:#c42b2b;font-size:13px;font-weight:500}
+.error-msg.show{display:block;animation:slideUp .3s ease}
+.empty-state{text-align:center;padding:48px 24px;color:var(--text-t);font-size:14px}
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-10px;animation:confettiFall 3s ease-out forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(105vh) rotate(720deg) scale(.3);opacity:0}}
 
-.or-line { display: flex; align-items: center; gap: 16px; color: var(--text-t); font-size: 12px; font-weight: 500; margin: 4px 0 16px; }
-.or-line .l { flex: 1; height: 1px; background: var(--border); }
+/* Tab bar */
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding:6px 0 env(safe-area-inset-bottom,10px);z-index:100}
+.tab{flex:1;text-align:center;padding:8px 0 4px;border:none;background:none;font-family:var(--font);font-size:10px;font-weight:600;color:var(--text-t);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab.active{color:var(--text)}
 
-.upload-drop { background: var(--card); border: 2px dashed var(--border); border-radius: var(--rl); padding: 40px 20px; text-align: center; cursor: pointer; }
-.upload-drop:hover { border-color: var(--accent); }
-.upload-drop:active { transform: scale(0.98); }
-.upload-drop p { font-size: 13px; color: var(--text-s); font-weight: 500; margin-top: 10px; }
-.upload-drop .sub { font-size: 11px; color: var(--text-t); margin-top: 4px; }
-.upload-drop input { display: none; }
-.upload-preview { display: none; margin-top: 14px; border-radius: var(--rl); overflow: hidden; }
-.upload-preview img { width: 100%; display: block; }
-
-/* RESULT */
-.result-area { margin-top: 20px; display: none; }
-.result-area.show { display: block; }
-.result-hero { border-radius: var(--rxl); overflow: hidden; background: var(--card); box-shadow: 0 4px 20px rgba(0,0,0,0.06); animation: slideUp 0.4s ease; margin-bottom: 16px; }
-.result-flag-banner { height: 180px; position: relative; overflow: hidden; }
-.result-flag-banner img { width: 100%; height: 100%; object-fit: cover; }
-.result-plate-badge { position: absolute; bottom: 14px; right: 16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 6px 14px; border-radius: 10px; font-family: var(--mono); font-size: 14px; font-weight: 600; color: white; letter-spacing: 0.08em; }
-.result-org-banner { height: 120px; background: linear-gradient(135deg, #0b1a2e, #1a2e4a); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: 0.12em; }
-.result-details { padding: 18px 20px; }
-.result-type-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.result-type-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-.result-type { font-size: 13px; color: var(--text-s); font-weight: 500; }
-.result-country-name { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 4px; }
-.amb-banner { background: linear-gradient(135deg, #ff9f0a, #ff6b00); padding: 10px 20px; font-size: 13px; font-weight: 700; color: white; }
-
-.result-map { border-radius: var(--rl); overflow: hidden; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
-.result-map #map { height: 200px; width: 100%; }
-
-.trivia-card { background: var(--card); border-radius: var(--rl); padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 16px; }
-.trivia-card .label { font-size: 11px; font-weight: 700; color: var(--text-s); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.trivia-card .fact { font-size: 13px; color: var(--text-s); line-height: 1.6; }
-.trivia-card .fact b { color: var(--text); }
-.trivia-loading { font-size: 12px; color: var(--text-t); font-style: italic; }
-
-/* LEADERBOARD */
-.lb-section { padding: 0 24px; }
-.lb-filters { display: flex; gap: 8px; margin-bottom: 20px; }
-.lb-pill { padding: 10px 18px; border-radius: 24px; border: 1.5px solid var(--border); background: var(--card); font-family: var(--font); font-size: 13px; font-weight: 600; color: var(--text-s); cursor: pointer; }
-.lb-pill:active { transform: scale(0.95); }
-.lb-pill.active { background: var(--accent); color: white; border-color: var(--accent); }
-.lb-metrics { display: flex; gap: 10px; margin-bottom: 16px; }
-.lb-metric { flex: 1; background: var(--card); border-radius: var(--r); padding: 14px 12px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.lb-metric .lbl { font-size: 9px; color: var(--text-t); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.lb-metric .val { font-family: var(--mono); font-size: 18px; font-weight: 700; margin-top: 3px; }
-.lb-metric .val.txt { font-family: var(--font); font-size: 12px; }
-.type-breakdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
-.type-stat { background: var(--card); border-radius: 12px; padding: 12px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
-.type-stat .num { font-family: var(--mono); font-size: 18px; font-weight: 700; }
-.type-stat .lbl { font-size: 9px; color: var(--text-s); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-.lb-list { background: var(--card); border-radius: var(--rl); padding: 4px 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
-.lb-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--bg); }
-.lb-row:last-child { border-bottom: none; }
-.lb-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; flex-shrink: 0; }
-.lb-r1 { background: var(--gold); } .lb-r2 { background: #8da3ba; } .lb-r3 { background: #c4956a; } .lb-rx { background: var(--bg); color: var(--text-s); }
-.lb-flag { width: 26px; border-radius: 4px; }
-.lb-name { flex: 1; font-size: 14px; font-weight: 600; }
-.lb-bar { width: 70px; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
-.lb-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.6s ease; }
-.lb-count { font-family: var(--mono); font-size: 13px; font-weight: 600; min-width: 24px; text-align: right; }
-
-.loading { display: none; text-align: center; padding: 36px 24px; color: var(--text-s); font-size: 13px; }
-
-/* Contact */
-.contact-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    margin-top: 14px; padding: 12px 24px;
-    background: var(--accent); color: white;
-    border-radius: 24px; text-decoration: none;
-    font-size: 14px; font-weight: 600;
-    transition: all 0.2s;
-}
-.contact-btn:hover { opacity: 0.85; }
-.contact-btn:active { transform: scale(0.97); }
-.loading.show { display: block; }
-.spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
-.error-msg { display: none; margin: 16px 0; background: #fff2f2; border-radius: var(--r); padding: 14px 18px; color: #c42b2b; font-size: 13px; font-weight: 500; }
-.error-msg.show { display: block; animation: slideUp 0.3s ease; }
-.empty-state { text-align: center; padding: 48px 24px; color: var(--text-t); font-size: 14px; }
-
-.tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding: 6px 0 env(safe-area-inset-bottom, 10px); z-index: 100; }
-.tab { flex: 1; text-align: center; padding: 8px 0 4px; border: none; background: none; font-family: var(--font); font-size: 10px; font-weight: 600; color: var(--text-t); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.tab.active { color: var(--text); }
-
-/* ── CONFETTI ── */
-.confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; overflow: hidden; }
-.confetti-piece {
-    position: absolute;
-    width: 10px; height: 10px;
-    top: -10px;
-    animation: confettiFall 3s ease-out forwards;
-}
-@keyframes confettiFall {
-    0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
-    100% { transform: translateY(105vh) rotate(720deg) scale(0.3); opacity: 0; }
-}
-
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (min-width: 481px) { body { display: flex; justify-content: center; } .app { box-shadow: 0 0 60px rgba(0,0,0,0.08); } }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(min-width:481px){body{display:flex;justify-content:center}.app{box-shadow:0 0 60px rgba(0,0,0,.08)}}
 </style>
 </head>
 <body>
 <div class="app">
 
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+<div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeAuth()">&times;</button>
+    <div id="authLogin">
+        <h2>Welcome back</h2>
+        <p class="sub">Log in to track your collection</p>
+        <input class="modal-input" id="loginEmail" type="email" placeholder="Email">
+        <input class="modal-input" id="loginPass" type="password" placeholder="Password">
+        <button class="modal-submit" onclick="doLogin()">Log in</button>
+        <div class="modal-error" id="loginError"></div>
+        <p class="modal-switch">No account? <a onclick="toggleAuthMode()">Sign up</a></p>
+    </div>
+    <div id="authSignup" style="display:none">
+        <h2>Create account</h2>
+        <p class="sub">Start building your diplomatic collection</p>
+        <input class="modal-input" id="signupEmail" type="email" placeholder="Email">
+        <input class="modal-input" id="signupPass" type="password" placeholder="Password (min 6 chars)">
+        <button class="modal-submit" onclick="doSignup()">Sign up</button>
+        <div class="modal-error" id="signupError"></div>
+        <p class="modal-switch">Have an account? <a onclick="toggleAuthMode()">Log in</a></p>
+    </div>
+</div>
+</div>
+
 <!-- HOME -->
 <div class="page active" id="page-home">
-    <div class="home-hero">
-        <h1>Welcome to DiploCheck</h1>
-        <p>Turn your commute into a global discovery! DiploCheck identifies diplomatic vehicles in seconds, shares fast facts about their home nations, and ranks the most-spotted missions in town. Diplomacy, demystified.</p>
+    <div class="auth-bar" id="authBar">
+        <button class="auth-btn" onclick="openAuth()" id="loginBtn">Log in</button>
+        <button class="auth-btn primary" onclick="openAuth(true)" id="signupBtn">Sign up</button>
+    </div>
+    <div class="auth-bar" id="userBar" style="display:none">
+        <span class="user-badge"><span class="user-dot"></span><span id="userName"></span></span>
+        <button class="auth-btn" onclick="doLogout()">Log out</button>
+    </div>
+    <div class="home-hero" style="padding-top:0">
+        <h1>DiploCheck</h1>
+        <p>Spot a diplomatic license plate on the streets? Look it up instantly to discover which country or organization it belongs to, the vehicle type, and the diplomat's rank.</p>
     </div>
     <div class="action-row">
         <div class="action-card" onclick="showPage('scan')">
             <div class="action-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-            <h3>Check a Plate</h3>
-            <p>Type or scan a plate</p>
+            <h3>Check a Plate</h3><p>Type or scan a plate</p>
         </div>
         <div class="action-card" onclick="showPage('leaderboard')">
             <div class="action-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg></div>
-            <h3>Leaderboard</h3>
-            <p>Most spotted nations</p>
+            <h3>Leaderboard</h3><p>Most spotted nations</p>
         </div>
     </div>
-    <div class="info-section">
-        <h2>How it works</h2>
+    <div class="info-section"><h2>How it works</h2>
         <div class="info-card">
-            <p>U.S. diplomatic license plates follow a specific format set by the Office of Foreign Missions (OFM). Each plate encodes three pieces of information:</p>
+            <p>U.S. diplomatic plates follow a format set by the Office of Foreign Missions (OFM). Each plate encodes three pieces of information:</p>
             <div class="plate-visual">
                 <div><div class="plate-segment seg-type">D</div><span class="seg-label">Type</span></div>
                 <div><div class="plate-segment seg-country">AF</div><span class="seg-label">Country</span></div>
                 <div><div class="plate-segment seg-number">1234</div><span class="seg-label">Vehicle #</span></div>
             </div>
-            <p>The <span class="highlight">first letter</span> indicates the vehicle type. The <span class="highlight">two-letter code</span> identifies the country or organization. The <span class="highlight">numbers</span> identify the specific vehicle.</p>
+            <p>The <span class="highlight">first letter</span> indicates the vehicle type. The <span class="highlight">two-letter code</span> identifies the country. The <span class="highlight">numbers</span> identify the vehicle.</p>
         </div>
         <div class="info-card">
             <p><span class="highlight">The New York reverse format</span></p>
-            <p style="margin-top:6px;">For diplomats permanently assigned to the United Nations in New York rather than embassies in Washington, the OFM flips the plate format entirely:</p>
-            <div style="display:flex; gap:20px; margin:16px 0 12px; justify-content:center; flex-wrap:wrap;">
-                <div style="text-align:center;">
-                    <div style="font-size:10px; color:var(--text-s); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">DC Embassies</div>
-                    <div class="plate-visual" style="margin:0;">
-                        <div><div class="plate-segment seg-type" style="padding:8px 10px;font-size:14px;">D</div></div>
-                        <div><div class="plate-segment seg-country" style="padding:8px 10px;font-size:14px;">AF</div></div>
-                        <div><div class="plate-segment seg-number" style="padding:8px 10px;font-size:14px;">1234</div></div>
-                    </div>
-                </div>
-                <div style="text-align:center;">
-                    <div style="font-size:10px; color:var(--text-s); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; margin-bottom:6px;">NY UN Missions</div>
-                    <div class="plate-visual" style="margin:0;">
-                        <div><div class="plate-segment seg-number" style="padding:8px 10px;font-size:14px;">1234</div></div>
-                        <div><div class="plate-segment seg-country" style="padding:8px 10px;font-size:14px;">AF</div></div>
-                        <div><div class="plate-segment seg-type" style="padding:8px 10px;font-size:14px;">D</div></div>
-                    </div>
-                </div>
+            <p style="margin-top:6px">For diplomats at the United Nations in New York, the format is reversed:</p>
+            <div style="display:flex;gap:20px;margin:16px 0 12px;justify-content:center;flex-wrap:wrap">
+                <div style="text-align:center"><div style="font-size:10px;color:var(--text-s);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px">DC Embassies</div><div class="plate-visual" style="margin:0"><div><div class="plate-segment seg-type" style="padding:8px 10px;font-size:14px">D</div></div><div><div class="plate-segment seg-country" style="padding:8px 10px;font-size:14px">AF</div></div><div><div class="plate-segment seg-number" style="padding:8px 10px;font-size:14px">1234</div></div></div></div>
+                <div style="text-align:center"><div style="font-size:10px;color:var(--text-s);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px">NY UN Missions</div><div class="plate-visual" style="margin:0"><div><div class="plate-segment seg-number" style="padding:8px 10px;font-size:14px">1234</div></div><div><div class="plate-segment seg-country" style="padding:8px 10px;font-size:14px">AF</div></div><div><div class="plate-segment seg-type" style="padding:8px 10px;font-size:14px">D</div></div></div></div>
             </div>
             <p>DiploCheck recognizes both formats automatically.</p>
         </div>
     </div>
-    <div class="info-section">
-        <h2>Vehicle types</h2>
+    <div class="info-section"><h2>Vehicle types</h2>
         <div class="info-card">
             <div class="type-grid">
                 <div class="type-item"><div class="letter">D</div><div class="label">Diplomat</div></div>
@@ -249,30 +284,27 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
                 <div class="type-item"><div class="letter">A</div><div class="label">UN Secretariat</div></div>
             </div>
         </div>
-        <div class="info-card" style="border:1.5px solid var(--gold); background:#fffbf0;">
-            <p><span class="highlight" style="color:#b8860b;">The Ambassador's car</span></p>
-            <p style="margin-top:6px;">When the vehicle number is <span class="highlight">0001</span>, it belongs to the Ambassador — the highest-ranking diplomat from that country. Spotting one is rare.</p>
+        <div class="info-card" style="border:1.5px solid var(--gold);background:#fffbf0">
+            <p><span class="highlight" style="color:#b8860b">The Ambassador's car</span></p>
+            <p style="margin-top:6px">When the vehicle number is <span class="highlight">0001</span>, it belongs to the Ambassador — the highest-ranking diplomat. Spotting one is rare.</p>
         </div>
     </div>
-    <div class="info-section">
-        <h2>Diplomatic vehicles in the U.S.</h2>
+    <div class="info-section"><h2>Diplomatic vehicles in the U.S.</h2>
         <div class="info-card">
-            <p>Washington, D.C. is home to the largest concentration of diplomatic vehicles in the United States. Across the country:</p>
+            <p>Washington, D.C. has the largest concentration of diplomatic vehicles in the United States.</p>
             <div class="stat-row">
                 <div class="stat-box"><div class="num">~15,000</div><div class="lbl">Registered vehicles</div></div>
                 <div class="stat-box"><div class="num">177</div><div class="lbl">Countries &amp; orgs</div></div>
             </div>
-            <p style="margin-top:14px;">These vehicles carry special legal protections under the Vienna Convention on Diplomatic Relations, including immunity from traffic enforcement in many cases.</p>
+            <p style="margin-top:14px">These vehicles carry special protections under the Vienna Convention on Diplomatic Relations.</p>
         </div>
     </div>
-    <div class="info-section">
-        <h2>Get in touch</h2>
-        <div class="info-card" style="text-align:center;">
-            <p>Have a question, spotted an error, or want to partner?</p>
-            <a href="mailto:diplocheck@outlook.com" class="contact-btn">
+    <div class="info-section"><h2>Get in touch</h2>
+        <div class="info-card" style="text-align:center">
+            <p>Have a question or spotted an error?</p>
+            <a href="mailto:hello@diplocheck.com" class="contact-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                diplocheck@outlook.com
-            </a>
+                hello@diplocheck.com</a>
         </div>
     </div>
 </div>
@@ -281,8 +313,7 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
 <div class="page" id="page-scan">
     <div class="header">
         <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <span class="page-title">Check a Plate</span>
-        <div style="width:40px"></div>
+        <span class="page-title">Check a Plate</span><div style="width:40px"></div>
     </div>
     <div class="scan-content">
         <label class="field-label">Plate number</label>
@@ -293,9 +324,8 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
         <div class="or-line"><div class="l"></div>or<div class="l"></div></div>
         <label class="field-label">Upload a photo</label>
         <div class="upload-drop" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <p>Tap to upload or drag a photo</p>
-            <p class="sub">JPG, JPEG, PNG</p>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.35"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <p>Tap to upload or drag a photo</p><p class="sub">JPG, JPEG, PNG</p>
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/jpg">
         </div>
         <div class="upload-preview" id="uploadPreview"><img id="previewImg" src="" alt="Preview"></div>
@@ -309,204 +339,297 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
 <div class="page" id="page-leaderboard">
     <div class="header">
         <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <span class="page-title">Leaderboard</span>
-        <div style="width:40px"></div>
+        <span class="page-title">Leaderboard</span><div style="width:40px"></div>
     </div>
-    <div class="lb-section" style="margin-top:20px;">
-        <div class="lb-filters">
-            <button class="lb-pill" onclick="filterLB('today',this)">Today</button>
-            <button class="lb-pill" onclick="filterLB('month',this)">This Month</button>
-            <button class="lb-pill active" onclick="filterLB('all',this)">All Time</button>
+    <div class="lb-section" style="margin-top:20px">
+        <div class="lb-tabs">
+            <button class="lb-tab active" onclick="switchLBTab('countries',this)">Countries</button>
+            <button class="lb-tab" onclick="switchLBTab('users',this)">Spotters</button>
         </div>
-        <div class="loading" id="lbLoading"><div class="spinner"></div><p>Loading...</p></div>
-        <div id="lbContent"></div>
+        <div id="lbCountries">
+            <div class="lb-filters">
+                <button class="lb-pill" onclick="filterLB('today',this)">Today</button>
+                <button class="lb-pill" onclick="filterLB('month',this)">This Month</button>
+                <button class="lb-pill active" onclick="filterLB('all',this)">All Time</button>
+            </div>
+            <div class="loading" id="lbLoading"><div class="spinner"></div><p>Loading...</p></div>
+            <div id="lbContent"></div>
+        </div>
+        <div id="lbUsers" style="display:none">
+            <div class="loading" id="ulLoading"><div class="spinner"></div><p>Loading spotters...</p></div>
+            <div id="ulContent"></div>
+        </div>
     </div>
+</div>
+
+<!-- MY COLLECTION -->
+<div class="page" id="page-collection">
+    <div class="header">
+        <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="page-title">My Collection</span><div style="width:40px"></div>
+    </div>
+    <div id="collectionContent"></div>
 </div>
 
 <!-- TAB BAR -->
 <div class="tab-bar">
-    <button class="tab active" onclick="showPage('home')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Home
-    </button>
-    <button class="tab" onclick="showPage('scan')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Check
-    </button>
-    <button class="tab" onclick="showPage('leaderboard')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg>
-        Board
-    </button>
+    <button class="tab active" onclick="showPage('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+    <button class="tab" onclick="showPage('scan')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Check</button>
+    <button class="tab" onclick="showPage('leaderboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg>Board</button>
+    <button class="tab" onclick="showPage('collection')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>My Spots</button>
 </div>
 </div>
 
 <script>
-let mapInstance = null;
+// ── AUTH ──
+const sb = window.supabase.createClient("{{ supabase_url }}", "{{ supabase_anon_key }}");
+let currentUser = null;
+let accessToken = null;
 
-// ── CONFETTI ──
-function launchConfetti() {
-    const container = document.createElement('div');
-    container.className = 'confetti-container';
-    document.body.appendChild(container);
-    const colors = ['#ff9f0a','#ff6b00','#ffd700','#ff4444','#4a90d9','#34c759','#ff69b4','#8b5cf6'];
-    for (let i = 0; i < 80; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'confetti-piece';
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        const size = 6 + Math.random() * 8;
-        const shape = Math.random() > 0.5 ? '50%' : '2px';
-        piece.style.cssText = `
-            left: ${Math.random() * 100}%;
-            width: ${size}px; height: ${size}px;
-            background: ${color};
-            border-radius: ${shape};
-            animation-delay: ${Math.random() * 0.8}s;
-            animation-duration: ${2 + Math.random() * 2}s;
-        `;
-        container.appendChild(piece);
-    }
-    setTimeout(() => container.remove(), 4000);
+async function initAuth() {
+    const {data} = await sb.auth.getSession();
+    if (data.session) { setUser(data.session); }
+    sb.auth.onAuthStateChange((event, session) => {
+        if (session) setUser(session); else clearUser();
+    });
 }
+
+function setUser(session) {
+    currentUser = session.user;
+    accessToken = session.access_token;
+    document.getElementById('authBar').style.display = 'none';
+    document.getElementById('userBar').style.display = 'flex';
+    document.getElementById('userName').textContent = currentUser.email.split('@')[0];
+}
+
+function clearUser() {
+    currentUser = null; accessToken = null;
+    document.getElementById('authBar').style.display = 'flex';
+    document.getElementById('userBar').style.display = 'none';
+}
+
+function openAuth(isSignup) {
+    document.getElementById('authModal').classList.add('show');
+    document.getElementById('authLogin').style.display = isSignup ? 'none' : 'block';
+    document.getElementById('authSignup').style.display = isSignup ? 'block' : 'none';
+}
+function closeAuth() { document.getElementById('authModal').classList.remove('show'); }
+function toggleAuthMode() {
+    const l = document.getElementById('authLogin');
+    const s = document.getElementById('authSignup');
+    l.style.display = l.style.display === 'none' ? 'block' : 'none';
+    s.style.display = s.style.display === 'none' ? 'block' : 'none';
+}
+
+async function doLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    const err = document.getElementById('loginError');
+    const {error} = await sb.auth.signInWithPassword({email, password: pass});
+    if (error) { err.textContent = error.message; err.classList.add('show'); }
+    else { closeAuth(); err.classList.remove('show'); }
+}
+
+async function doSignup() {
+    const email = document.getElementById('signupEmail').value;
+    const pass = document.getElementById('signupPass').value;
+    const err = document.getElementById('signupError');
+    const {error} = await sb.auth.signUp({email, password: pass});
+    if (error) { err.textContent = error.message; err.classList.add('show'); }
+    else { err.classList.remove('show'); closeAuth(); alert('Check your email to confirm your account!'); }
+}
+
+async function doLogout() { await sb.auth.signOut(); clearUser(); }
+
+function authHeaders() {
+    const h = {'Content-Type':'application/json'};
+    if (accessToken) h['Authorization'] = 'Bearer ' + accessToken;
+    return h;
+}
+
+// ── NAVIGATION ──
+let collMap = null;
+let resultMap = null;
 
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-'+id).classList.add('active');
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const m = {home:0,scan:1,leaderboard:2};
+    const m = {home:0,scan:1,leaderboard:2,collection:3};
     document.querySelectorAll('.tab')[m[id]||0].classList.add('active');
     window.scrollTo(0,0);
     if (id==='leaderboard') loadLB('all');
+    if (id==='collection') loadCollection();
 }
 
+// ── CONFETTI ──
+function launchConfetti() {
+    const c = document.createElement('div'); c.className='confetti-container'; document.body.appendChild(c);
+    const colors=['#ff9f0a','#ff6b00','#ffd700','#ff4444','#4a90d9','#34c759','#ff69b4','#8b5cf6'];
+    for(let i=0;i<80;i++){const p=document.createElement('div');p.className='confetti-piece';const sz=6+Math.random()*8;
+    p.style.cssText=`left:${Math.random()*100}%;width:${sz}px;height:${sz}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation-delay:${Math.random()*.8}s;animation-duration:${2+Math.random()*2}s;`;c.appendChild(p);}
+    setTimeout(()=>c.remove(),4000);
+}
+
+// ── PLATE LOOKUP ──
 const plateInput = document.getElementById('plateInput');
 plateInput.addEventListener('keydown', e => { if(e.key==='Enter') lookupPlate(); });
 
 async function lookupPlate() {
-    const text = plateInput.value.trim();
-    if (!text) return;
-    const loading = document.getElementById('scanLoading');
-    const error = document.getElementById('scanError');
-    const result = document.getElementById('scanResult');
-    loading.classList.add('show'); error.classList.remove('show'); result.classList.remove('show'); result.innerHTML='';
+    const text = plateInput.value.trim(); if(!text) return;
+    const loading=document.getElementById('scanLoading'),error=document.getElementById('scanError'),result=document.getElementById('scanResult');
+    loading.classList.add('show');error.classList.remove('show');result.classList.remove('show');result.innerHTML='';
     try {
-        const resp = await fetch('/api/lookup', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({plate:text})});
+        const resp = await fetch('/api/lookup',{method:'POST',headers:authHeaders(),body:JSON.stringify({plate:text})});
         const data = await resp.json();
-        if (!resp.ok) { error.textContent=data.error; error.classList.add('show'); }
-        else renderResult(data, result);
-    } catch(e) { error.textContent='Connection error.'; error.classList.add('show'); }
+        if(!resp.ok){error.textContent=data.error;error.classList.add('show');}
+        else renderResult(data,result);
+    } catch(e){error.textContent='Connection error.';error.classList.add('show');}
     loading.classList.remove('show');
 }
 
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', handleUpload);
-async function handleUpload() {
-    const file = fileInput.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => { document.getElementById('previewImg').src=e.target.result; document.getElementById('uploadPreview').style.display='block'; };
-    reader.readAsDataURL(file);
-    const loading = document.getElementById('scanLoading');
-    const error = document.getElementById('scanError');
-    const result = document.getElementById('scanResult');
-    loading.classList.add('show'); error.classList.remove('show'); result.classList.remove('show'); result.innerHTML='';
-    const fd = new FormData(); fd.append('image',file);
-    try {
-        const resp = await fetch('/api/scan-image', {method:'POST', body:fd});
-        const data = await resp.json();
-        if (!resp.ok) { error.textContent=data.error; error.classList.add('show'); }
-        else renderResult(data, result);
-    } catch(e) { error.textContent='Connection error.'; error.classList.add('show'); }
+// ── UPLOAD ──
+const fileInput=document.getElementById('fileInput');
+fileInput.addEventListener('change',handleUpload);
+async function handleUpload(){
+    const file=fileInput.files[0];if(!file)return;
+    const reader=new FileReader();reader.onload=e=>{document.getElementById('previewImg').src=e.target.result;document.getElementById('uploadPreview').style.display='block';};reader.readAsDataURL(file);
+    const loading=document.getElementById('scanLoading'),error=document.getElementById('scanError'),result=document.getElementById('scanResult');
+    loading.classList.add('show');error.classList.remove('show');result.classList.remove('show');result.innerHTML='';
+    const fd=new FormData();fd.append('image',file);
+    const h={};if(accessToken)h['Authorization']='Bearer '+accessToken;
+    try{const resp=await fetch('/api/scan-image',{method:'POST',body:fd,headers:h});const data=await resp.json();
+    if(!resp.ok){error.textContent=data.error;error.classList.add('show');}else renderResult(data,result);
+    }catch(e){error.textContent='Connection error.';error.classList.add('show');}
     loading.classList.remove('show');
 }
-const uploadZone = document.getElementById('uploadZone');
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor='var(--accent)'; });
-uploadZone.addEventListener('dragleave', () => uploadZone.style.borderColor='');
-uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.style.borderColor=''; if(e.dataTransfer.files.length){fileInput.files=e.dataTransfer.files; handleUpload();} });
+const uploadZone=document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.style.borderColor='var(--accent)';});
+uploadZone.addEventListener('dragleave',()=>uploadZone.style.borderColor='');
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.style.borderColor='';if(e.dataTransfer.files.length){fileInput.files=e.dataTransfer.files;handleUpload();}});
 
+// ── RENDER RESULT ──
 function renderResult(data, container) {
-    // Confetti for ambassador
-    if (data.ambassador) { launchConfetti(); }
-
-    let bannerHtml = '';
-    if (data.iso2) {
-        bannerHtml = `<div class="result-flag-banner"><img src="https://flagcdn.com/w640/${data.iso2}.png" alt="${data.country}"><div class="result-plate-badge">${fmt(data.plate)}</div></div>`;
-    } else if (data.org_icon) {
-        bannerHtml = `<div class="result-org-banner">${data.org_icon}</div>`;
-    }
-    const triviaId = 'trivia-'+Math.random().toString(36).slice(2);
-    const mapId = 'map-'+Math.random().toString(36).slice(2);
-
-    container.innerHTML = `
-    <div class="result-hero">
-        ${data.ambassador ? '<div class="amb-banner">Ambassador Vehicle</div>' : ''}
-        ${bannerHtml}
-        <div class="result-details">
-            <div class="result-type-row"><div class="result-type-dot"></div><span class="result-type">${data.type}</span></div>
-            <h3 class="result-country-name">${data.country}</h3>
-        </div>
-    </div>
-    ${data.lat && data.lng ? `<div class="result-map"><div id="${mapId}" style="height:200px;width:100%;"></div></div>` : ''}
+    if(data.ambassador) launchConfetti();
+    let bannerHtml='';
+    if(data.iso2) bannerHtml=`<div class="result-flag-banner"><img src="https://flagcdn.com/w640/${data.iso2}.png" alt="${data.country}"><div class="result-plate-badge">${fmt(data.plate)}</div></div>`;
+    else if(data.org_icon) bannerHtml=`<div class="result-org-banner">${data.org_icon}</div>`;
+    const triviaId='t-'+Math.random().toString(36).slice(2);
+    const mapId='m-'+Math.random().toString(36).slice(2);
+    container.innerHTML=`
+    <div class="result-hero">${data.ambassador?'<div class="amb-banner">Ambassador Vehicle</div>':''}${bannerHtml}
+        <div class="result-details"><div class="result-type-row"><div class="result-type-dot"></div><span class="result-type">${data.type}</span></div>
+        <h3 class="result-country-name">${data.country}</h3></div></div>
+    ${data.lat&&data.lng?`<div class="result-map"><div id="${mapId}" style="height:200px;width:100%"></div></div>`:''}
     <div class="trivia-card" id="${triviaId}"><div class="label">Fun fact</div><div class="fact"><span class="trivia-loading">Loading...</span></div></div>`;
     container.classList.add('show');
+    if(data.lat&&data.lng){setTimeout(()=>{if(resultMap){resultMap.remove();resultMap=null;}resultMap=L.map(mapId,{zoomControl:false,attributionControl:false}).setView([data.lat,data.lng],4);L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(resultMap);L.circleMarker([data.lat,data.lng],{radius:8,fillColor:'#0b1a2e',fillOpacity:.9,color:'#fff',weight:2}).addTo(resultMap);},100);}
+    loadTrivia(data.country,data.is_org,triviaId);
+}
+async function loadTrivia(name,isOrg,elId){try{const r=await fetch(`/api/trivia?name=${encodeURIComponent(name)}&org=${isOrg}`);const d=await r.json();const el=document.getElementById(elId);if(el&&d.trivia)el.querySelector('.fact').innerHTML=d.trivia;else if(el)el.remove();}catch(e){const el=document.getElementById(elId);if(el)el.remove();}}
+function fmt(p){p=p.replace(/\s/g,'');return p.length>3?p.slice(0,3)+' '+p.slice(3):p;}
 
-    if (data.lat && data.lng) {
-        setTimeout(() => {
-            if (mapInstance) { mapInstance.remove(); mapInstance = null; }
-            mapInstance = L.map(mapId, {zoomControl:false, attributionControl:false}).setView([data.lat, data.lng], 4);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(mapInstance);
-            L.circleMarker([data.lat, data.lng], {radius:8, fillColor:'#0b1a2e', fillOpacity:0.9, color:'#fff', weight:2}).addTo(mapInstance);
-        }, 100);
-    }
-    loadTrivia(data.country, data.is_org, triviaId);
+// ── LEADERBOARD ──
+function switchLBTab(tab,btn){
+    document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+    document.getElementById('lbCountries').style.display=tab==='countries'?'block':'none';
+    document.getElementById('lbUsers').style.display=tab==='users'?'block':'none';
+    if(tab==='users') loadUserLB();
 }
 
-async function loadTrivia(name, isOrg, elId) {
-    try {
-        const resp = await fetch(`/api/trivia?name=${encodeURIComponent(name)}&org=${isOrg}`);
-        const data = await resp.json();
-        const el = document.getElementById(elId);
-        if (el && data.trivia) el.querySelector('.fact').innerHTML = data.trivia;
-        else if (el) el.remove();
-    } catch(e) { const el=document.getElementById(elId); if(el) el.remove(); }
-}
+function filterLB(period,btn){document.querySelectorAll('.lb-pill').forEach(p=>p.classList.remove('active'));btn.classList.add('active');loadLB(period);}
 
-function fmt(p) { p=p.replace(/\s/g,''); return p.length>3 ? p.slice(0,3)+' '+p.slice(3) : p; }
-
-function filterLB(period,btn) {
-    document.querySelectorAll('.lb-pill').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active'); loadLB(period);
-}
-
-async function loadLB(period) {
-    const loading=document.getElementById('lbLoading');
-    const content=document.getElementById('lbContent');
-    loading.classList.add('show'); content.innerHTML='';
-    try {
-        const resp = await fetch(`/api/leaderboard?period=${period}`);
-        const data = await resp.json();
-        if (!data.entries||!data.entries.length) { content.innerHTML='<div class="empty-state">No scans yet. Be the first!</div>'; loading.classList.remove('show'); return; }
-        const max=data.entries[0].scans;
-        const tc = data.type_counts || {};
-        let html = `<div class="lb-metrics">
-            <div class="lb-metric"><div class="lbl">Scans</div><div class="val">${data.total_scans}</div></div>
-            <div class="lb-metric"><div class="lbl">Countries</div><div class="val">${data.total_countries}</div></div>
-            <div class="lb-metric"><div class="lbl">Top</div><div class="val txt">${data.top_country}</div></div>
-        </div>
-        <div class="type-breakdown">
-            <div class="type-stat"><div class="num">${tc['Diplomat']||0}</div><div class="lbl">Diplomat</div></div>
-            <div class="type-stat"><div class="num">${tc['Consular']||0}</div><div class="lbl">Consular</div></div>
-            <div class="type-stat"><div class="num">${tc['Embassy Staff']||0}</div><div class="lbl">Staff</div></div>
-            <div class="type-stat"><div class="num">${tc['Ambassador']||0}</div><div class="lbl">Ambass.</div></div>
-        </div><div class="lb-list">`;
-        data.entries.forEach((e,i) => {
-            const r=i+1, rc=r===1?'lb-r1':r===2?'lb-r2':r===3?'lb-r3':'lb-rx';
-            let fh=e.iso2?`<img class="lb-flag" src="https://flagcdn.com/w40/${e.iso2}.png" alt="">`:'';
-            const pct=Math.round((e.scans/max)*100);
-            html+=`<div class="lb-row"><div class="lb-rank ${rc}">${r}</div>${fh}<span class="lb-name">${e.country}</span><div class="lb-bar"><div class="lb-bar-fill" style="width:${pct}%"></div></div><span class="lb-count">${e.scans}</span></div>`;
-        });
-        content.innerHTML=html+'</div>';
-    } catch(e) { content.innerHTML='<div class="empty-state">Could not load.</div>'; }
+async function loadLB(period){
+    const loading=document.getElementById('lbLoading'),content=document.getElementById('lbContent');
+    loading.classList.add('show');content.innerHTML='';
+    try{const r=await fetch(`/api/leaderboard?period=${period}`);const data=await r.json();
+    if(!data.entries||!data.entries.length){content.innerHTML='<div class="empty-state">No scans yet.</div>';loading.classList.remove('show');return;}
+    const max=data.entries[0].scans;const tc=data.type_counts||{};
+    let html=`<div class="lb-metrics"><div class="lb-metric"><div class="lbl">Scans</div><div class="val">${data.total_scans}</div></div><div class="lb-metric"><div class="lbl">Countries</div><div class="val">${data.total_countries}</div></div><div class="lb-metric"><div class="lbl">Top</div><div class="val txt">${data.top_country}</div></div></div>
+    <div class="type-breakdown"><div class="type-stat"><div class="num">${tc['Diplomat']||0}</div><div class="lbl">Diplomat</div></div><div class="type-stat"><div class="num">${tc['Consular']||0}</div><div class="lbl">Consular</div></div><div class="type-stat"><div class="num">${tc['Embassy Staff']||0}</div><div class="lbl">Staff</div></div><div class="type-stat"><div class="num">${tc['Ambassador']||0}</div><div class="lbl">Ambass.</div></div></div><div class="lb-list">`;
+    data.entries.forEach((e,i)=>{const r=i+1,rc=r===1?'lb-r1':r===2?'lb-r2':r===3?'lb-r3':'lb-rx';
+    let fh=e.iso2?`<img class="lb-flag" src="https://flagcdn.com/w40/${e.iso2}.png" alt="">`:'';
+    html+=`<div class="lb-row"><div class="lb-rank ${rc}">${r}</div>${fh}<span class="lb-name">${e.country}</span><div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.round((e.scans/max)*100)}%"></div></div><span class="lb-count">${e.scans}</span></div>`;});
+    content.innerHTML=html+'</div>';}catch(e){content.innerHTML='<div class="empty-state">Could not load.</div>';}
     loading.classList.remove('show');
 }
+
+async function loadUserLB(){
+    const loading=document.getElementById('ulLoading'),content=document.getElementById('ulContent');
+    loading.classList.add('show');content.innerHTML='';
+    try{const r=await fetch('/api/user-leaderboard');const data=await r.json();
+    if(!data.users||!data.users.length){content.innerHTML='<div class="empty-state">No spotters yet. Sign up to be first!</div>';loading.classList.remove('show');return;}
+    const max=data.users[0].points;
+    let html='<div class="lb-list">';
+    data.users.forEach((u,i)=>{const r=i+1,rc=r===1?'lb-r1':r===2?'lb-r2':r===3?'lb-r3':'lb-rx';
+    html+=`<div class="lb-row" style="flex-wrap:wrap"><div class="lb-rank ${rc}">${r}</div><div style="flex:1"><div class="lb-name">${u.display_name}</div><div class="lb-user-meta"><span>${u.countries} countries</span><span>${u.ambassadors} amb.</span>${u.streak>0?`<span>${u.streak}d streak</span>`:''}</span></div></div><span class="lb-pts">${u.points} pts</span></div>`;});
+    content.innerHTML=html+'</div>';}catch(e){content.innerHTML='<div class="empty-state">Could not load.</div>';}
+    loading.classList.remove('show');
+}
+
+// ── COLLECTION ──
+async function loadCollection(){
+    const content=document.getElementById('collectionContent');
+    if(!currentUser){content.innerHTML=`<div class="login-prompt"><h3>Track your spots</h3><p>Sign up or log in to build your personal diplomatic collection, earn points, and compete on the leaderboard.</p><button class="auth-btn primary" onclick="openAuth(true)" style="padding:14px 32px;font-size:14px;border-radius:14px">Sign up</button></div>`;return;}
+    content.innerHTML='<div class="loading show"><div class="spinner"></div><p>Loading collection...</p></div>';
+    try{const r=await fetch('/api/my-collection',{headers:authHeaders()});const data=await r.json();
+    if(data.error){content.innerHTML=`<div class="empty-state">${data.error}</div>`;return;}
+    const pts=data.points;const spotted=data.spotted||[];const allC=data.all_countries||[];
+    const spottedSet=new Set(spotted.map(s=>s.country));const ambSet=new Set(spotted.filter(s=>s.ambassador).map(s=>s.country));
+
+    // Points card
+    let html=`<div class="points-card"><div class="pts-label">Your points</div><div class="pts">${pts.total}</div><div class="streak-row"><span>${pts.scan_count} scans</span><span>${pts.countries} countries</span><span>${pts.ambassadors} ambassadors</span>${pts.streak>0?`<span>${pts.streak}d streak</span>`:''}</div></div>`;
+
+    // Stats
+    html+=`<div class="collection-stats"><div class="coll-stat"><div class="val">${spotted.length}</div><div class="lbl">Spotted</div></div><div class="coll-stat"><div class="val">${data.total_possible}</div><div class="lbl">Total</div></div><div class="coll-stat"><div class="val gold">${pts.ambassadors}</div><div class="lbl">Ambassadors</div></div></div>`;
+
+    // Map
+    html+=`<div class="progress-section"><h3>Progress map</h3><div class="collection-map" id="collMapDiv"></div>`;
+
+    // Continent progress
+    const contCounts={};const contTotals={};
+    spotted.forEach(s=>{if(s.continent){contCounts[s.continent]=(contCounts[s.continent]||0)+1;}});
+    allC.forEach(c=>{if(c.continent){contTotals[c.continent]=(contTotals[c.continent]||0)+1;}});
+    const conts=Object.keys(contTotals).sort();
+    html+=`<div class="continent-progress">`;
+    conts.forEach(c=>{const have=contCounts[c]||0;const total=contTotals[c]||1;const pct=Math.round((have/total)*100);
+    const complete=pts.continents_complete.includes(c);
+    html+=`<div class="cont-row"><span class="cont-name">${c}</span><div class="cont-bar"><div class="cont-bar-fill" style="width:${pct}%"></div></div><span class="cont-count">${have}/${total}</span>${complete?'<span class="cont-badge">DONE</span>':''}</div>`;});
+    html+=`</div></div>`;
+
+    // Spotted countries list
+    if(spotted.length){
+        html+=`<div class="progress-section"><h3>Spotted countries</h3><div class="spotted-list">`;
+        spotted.sort((a,b)=>b.count-a.count);
+        spotted.forEach(s=>{
+            let fh=s.iso2?`<img class="spot-flag" src="https://flagcdn.com/w40/${s.iso2}.png" alt="">`:'';
+            html+=`<div class="spot-row">${fh}<span class="spot-name">${s.country}</span>${s.ambassador?'<div class="spot-amb">A</div>':''}<span class="spot-count">${s.count}x</span></div>`;
+        });
+        html+=`</div></div>`;
+    }
+    content.innerHTML=html;
+
+    // Render map
+    setTimeout(()=>{
+        if(collMap){collMap.remove();collMap=null;}
+        const mapEl=document.getElementById('collMapDiv');
+        if(!mapEl)return;
+        collMap=L.map(mapEl,{zoomControl:false,attributionControl:false,minZoom:1}).setView([20,0],2);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png').addTo(collMap);
+        // All countries as gray dots
+        allC.forEach(c=>{
+            const isSpotted=spottedSet.has(c.country);const isAmb=ambSet.has(c.country);
+            const color=isAmb?'#ff9f0a':isSpotted?'#34c759':'#d0d8e0';
+            const radius=isAmb?7:isSpotted?6:3;
+            const opacity=isSpotted?0.9:0.4;
+            L.circleMarker([c.lat,c.lng],{radius,fillColor:color,fillOpacity:opacity,color:isAmb?'#fff':'transparent',weight:isAmb?2:0}).bindTooltip(c.country).addTo(collMap);
+        });
+    },200);
+    }catch(e){content.innerHTML=`<div class="empty-state">Could not load collection.</div>`;}
+}
+
+// ── INIT ──
+initAuth();
 </script>
 </body>
 </html>
