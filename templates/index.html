@@ -80,6 +80,20 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .stat-box .lbl{font-size:11px;color:var(--text-s);margin-top:4px}
 .contact-btn{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:12px 24px;background:var(--accent);color:white;border-radius:24px;text-decoration:none;font-size:14px;font-weight:600}
 
+/* Legal pages */
+.legal-content{padding:24px 24px 40px;max-width:480px}
+.legal-content .legal-date{font-size:12px;color:var(--text-t);margin-bottom:20px;font-style:italic}
+.legal-content h3{font-size:15px;font-weight:700;margin-top:20px;margin-bottom:8px;color:var(--text)}
+.legal-content h3:first-of-type{margin-top:0}
+.legal-content p{font-size:13px;color:var(--text-s);line-height:1.65;margin-bottom:4px}
+.legal-content a{color:var(--accent);font-weight:600;text-decoration:underline}
+
+/* Footer */
+.legal-footer{padding:20px 24px 32px;text-align:center;font-size:11px;color:var(--text-t);display:flex;flex-direction:column;gap:6px}
+.legal-footer-links{display:flex;justify-content:center;gap:14px}
+.legal-footer-links a{color:var(--text-s);text-decoration:none;cursor:pointer;font-weight:500}
+.legal-footer-links a:hover{color:var(--text)}
+
 /* Scan page */
 .scan-content{padding:0 24px;margin-top:20px}
 .field-label{font-size:11px;font-weight:600;color:var(--text-s);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:block}
@@ -225,6 +239,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <p class="sub">Start building your diplomatic collection</p>
         <input class="modal-input" id="signupEmail" type="email" placeholder="Email">
         <input class="modal-input" id="signupPass" type="password" placeholder="Password (min 6 chars)">
+        <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-s);line-height:1.5;margin:8px 0 14px;cursor:pointer">
+            <input type="checkbox" id="agreeCheck" style="margin-top:3px;cursor:pointer">
+            <span>I agree to the <a onclick="showPage('terms');closeAuth()" style="color:var(--accent);font-weight:600;cursor:pointer">Terms of Service</a> and <a onclick="showPage('privacy');closeAuth()" style="color:var(--accent);font-weight:600;cursor:pointer">Privacy Policy</a></span>
+        </label>
         <button class="modal-submit" onclick="doSignup()">Sign up</button>
         <div class="modal-error" id="signupError"></div>
         <p class="modal-switch">Have an account? <a onclick="toggleAuthMode()">Log in</a></p>
@@ -315,11 +333,21 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </div>
     <div class="info-section"><h2>Get in touch</h2>
         <div class="info-card" style="text-align:center">
-            <p>Have a question or want to partner?</p>
-            <a href="mailto:diplocheck@outlook.com" class="contact-btn">
+            <p>Have a question or spotted an error?</p>
+            <a href="mailto:hello@diplocheck.com" class="contact-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                diplocheck@outlook.com</a>
+                hello@diplocheck.com</a>
         </div>
+    </div>
+    <div class="legal-footer">
+        <div class="legal-footer-links">
+            <a onclick="showPage('terms')">Terms of Service</a>
+            <span>·</span>
+            <a onclick="showPage('privacy')">Privacy Policy</a>
+            <span>·</span>
+            <a href="mailto:hello@diplocheck.com">Contact</a>
+        </div>
+        <div>© 2026 DiploCheck</div>
     </div>
 </div>
 
@@ -383,6 +411,66 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <span class="page-title">My Collection</span><div style="width:40px"></div>
     </div>
     <div id="collectionContent"></div>
+</div>
+
+<!-- TERMS OF SERVICE -->
+<div class="page" id="page-terms">
+    <div class="header">
+        <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="page-title">Terms of Service</span><div style="width:40px"></div>
+    </div>
+    <div class="legal-content">
+        <p class="legal-date">Last updated: April 19, 2026</p>
+        <h3>1. Acceptance of terms</h3>
+        <p>By creating an account or using DiploCheck, you agree to these Terms of Service. If you don't agree, please don't use the service.</p>
+        <h3>2. What DiploCheck is</h3>
+        <p>DiploCheck is a hobby app that helps people identify U.S. diplomatic license plates by looking up the country or organization they're registered to. It's provided for educational and entertainment purposes only.</p>
+        <h3>3. Your account</h3>
+        <p>You're responsible for keeping your password secure and for all activity on your account. You must be at least 13 years old to create an account. Choose a username that isn't offensive, misleading, or impersonates someone else.</p>
+        <h3>4. User-generated content</h3>
+        <p>When you look up plates or upload photos, you're responsible for the content you submit. Don't upload photos containing people's faces or other identifying information without consent. Don't use the service to harass, stalk, or surveil anyone.</p>
+        <h3>5. Privacy and diplomatic vehicles</h3>
+        <p>DiploCheck is designed to identify the country on a plate — not to track individual vehicles or their occupants. Using DiploCheck to harass, follow, or target diplomats is strictly prohibited and may violate federal law.</p>
+        <h3>6. No warranty</h3>
+        <p>DiploCheck is provided "as is." We do our best to keep the plate code database accurate, but we don't guarantee it's complete, current, or error-free. Don't rely on DiploCheck for legal, official, or security purposes.</p>
+        <h3>7. Limitation of liability</h3>
+        <p>To the fullest extent permitted by law, DiploCheck and its operators aren't liable for any damages arising from your use of the service, including incorrect results, downtime, data loss, or third-party actions.</p>
+        <h3>8. Termination</h3>
+        <p>We may suspend or terminate accounts that violate these terms or misuse the service. You can delete your account at any time by contacting us.</p>
+        <h3>9. Changes to these terms</h3>
+        <p>We may update these terms occasionally. Significant changes will be communicated via the app or by email. Continued use after changes means you accept the updated terms.</p>
+        <h3>10. Contact</h3>
+        <p>Questions? Email <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>.</p>
+    </div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div class="page" id="page-privacy">
+    <div class="header">
+        <button class="header-back" onclick="showPage('home')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <span class="page-title">Privacy Policy</span><div style="width:40px"></div>
+    </div>
+    <div class="legal-content">
+        <p class="legal-date">Last updated: April 19, 2026</p>
+        <h3>What we collect</h3>
+        <p>When you create an account, we store your email address, a password hash (we never see your password in plain text), your chosen username, and the date your account was created. When you look up a plate, we record the plate code, country, vehicle type, and a timestamp.</p>
+        <h3>What we don't collect</h3>
+        <p>We don't collect your location, your device information beyond basic browser details, or any photos you upload. Photos are processed by our AI service to read the plate and are not stored.</p>
+        <h3>How we use your data</h3>
+        <p>Your scans power your personal collection, the global leaderboard, and aggregated statistics (like "most spotted countries"). Your username is displayed publicly on the Spotters leaderboard — your email is never shown.</p>
+        <h3>Cookies and storage</h3>
+        <p>We use only strictly necessary cookies and local storage to keep you logged in. We don't use tracking cookies or analytics.</p>
+        <h3>Third parties</h3>
+        <p>Authentication and database services are provided by Supabase. Plate photos are processed by Google's Gemini AI to extract text. Neither service retains identifiable user information from DiploCheck beyond what's needed to provide the service.</p>
+        <h3>Your rights</h3>
+        <p>You can request a copy of your data, correct inaccuracies, or delete your account entirely by emailing <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>. Account deletion removes your profile, username, and link between scans and your identity.</p>
+        <h3>Children</h3>
+        <p>DiploCheck isn't intended for children under 13. We don't knowingly collect data from anyone under 13.</p>
+        <h3>Changes to this policy</h3>
+        <p>We'll post any significant changes on this page and update the "Last updated" date.</p>
+        <h3>Contact</h3>
+        <p>Questions? Email <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>.</p>
+    </div>
 </div>
 
 <!-- TAB BAR -->
@@ -482,7 +570,9 @@ async function doLogin() {
 async function doSignup() {
     const email = document.getElementById('signupEmail').value;
     const pass = document.getElementById('signupPass').value;
+    const agreed = document.getElementById('agreeCheck').checked;
     const err = document.getElementById('signupError');
+    if (!agreed) { err.textContent = 'You must agree to the Terms and Privacy Policy.'; err.classList.add('show'); return; }
     const {error} = await sb.auth.signUp({email, password: pass});
     if (error) { err.textContent = error.message; err.classList.add('show'); }
     else { err.classList.remove('show'); closeAuth(); alert('Check your email to confirm your account!'); }
