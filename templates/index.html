@@ -274,8 +274,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <button class="auth-btn" onclick="doLogout()">Log out</button>
     </div>
     <div class="home-hero" style="padding-top:0">
-        <h1>Welcome to DiploCheck</h1>
-        <p>Turn your commute into a global discovery! Instantly identify the missions behind diplomatic plates and learn fast facts about their home countries. Sign up for free and climb the leaderboard to become the ultimate spotter.</p>
+        <h1>DiploCheck</h1>
+        <p>Spot a diplomatic license plate on the streets? Look it up instantly to discover which country or organization it belongs to, the vehicle type, and the diplomat's rank.</p>
     </div>
     <div class="action-row">
         <div class="action-card" onclick="showPage('scan')">
@@ -284,7 +284,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         </div>
         <div class="action-card" onclick="showPage('leaderboard')">
             <div class="action-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="14" rx="1"/><rect x="16" y="4" width="4" height="18" rx="1"/></svg></div>
-            <h3>Leaderboard</h3><p>Most sightings</p>
+            <h3>Leaderboard</h3><p>Most spotted nations</p>
         </div>
     </div>
     <div class="info-section"><h2>How it works</h2>
@@ -333,10 +333,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </div>
     <div class="info-section"><h2>Get in touch</h2>
         <div class="info-card" style="text-align:center">
-            <p>Have a question or want to partner?</p>
-            <a href="mailto:diplocheck@outlook.com" class="contact-btn">
+            <p>Have a question or spotted an error?</p>
+            <a href="mailto:hello@diplocheck.com" class="contact-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                diplocheck@outlook.com</a>
+                hello@diplocheck.com</a>
         </div>
     </div>
     <div class="legal-footer">
@@ -345,7 +345,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
             <span>·</span>
             <a onclick="showPage('privacy')">Privacy Policy</a>
             <span>·</span>
-            <a href="mailto:diplocheck@outlook.com">Contact</a>
+            <a href="mailto:hello@diplocheck.com">Contact</a>
         </div>
         <div>© 2026 DiploCheck</div>
     </div>
@@ -432,7 +432,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <h3>5. Privacy and diplomatic vehicles</h3>
         <p>DiploCheck is designed to identify the country on a plate — not to track individual vehicles or their occupants. Using DiploCheck to harass, follow, or target diplomats is strictly prohibited and may violate federal law.</p>
         <h3>6. No warranty</h3>
-        <p>DiploCheck is provided "as is." We do our best to keep the plate code database accurate, but we don't guarantee it's complete, current, or error-free. Don't rely on DiploCheck for legal, official, or security purposes.</p>
+        <p>DiploCheck is provided "as is." The plate code database is compiled from publicly available sources, including the U.S. Department of State's Office of Foreign Missions documentation, third-party enthusiast databases, and community contributions. These sources may be outdated, incomplete, or inaccurate — plate code assignments can change, be reassigned between countries, or be retired without public notice. We make no guarantee that the information returned is correct, current, or complete. DiploCheck is not affiliated with, endorsed by, or sourced directly from any government agency. Don't rely on DiploCheck for legal, official, investigative, journalistic, or security purposes.</p>
         <h3>7. Limitation of liability</h3>
         <p>To the fullest extent permitted by law, DiploCheck and its operators aren't liable for any damages arising from your use of the service, including incorrect results, downtime, data loss, or third-party actions.</p>
         <h3>8. Termination</h3>
@@ -440,7 +440,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <h3>9. Changes to these terms</h3>
         <p>We may update these terms occasionally. Significant changes will be communicated via the app or by email. Continued use after changes means you accept the updated terms.</p>
         <h3>10. Contact</h3>
-        <p>Questions? Email <a href="mailto:diplocheck@outlook.com">diplocheck@outlook.com</a>.</p>
+        <p>Questions? Email <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>.</p>
     </div>
 </div>
 
@@ -462,14 +462,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <p>We use only strictly necessary cookies and local storage to keep you logged in. We don't use tracking cookies or analytics.</p>
         <h3>Third parties</h3>
         <p>Authentication and database services are provided by Supabase. Plate photos are processed by Google's Gemini AI to extract text. Neither service retains identifiable user information from DiploCheck beyond what's needed to provide the service.</p>
+        <h3>Data sources and accuracy</h3>
+        <p>The diplomatic plate code information returned by DiploCheck is compiled from publicly available sources and may contain errors, outdated assignments, or gaps. DiploCheck is independently operated and not affiliated with any government body. Information should be treated as informational only and not relied upon for any official, legal, or decision-making purpose.</p>
         <h3>Your rights</h3>
-        <p>You can request a copy of your data, correct inaccuracies, or delete your account entirely by emailing <a href="mailto:diplocheck@outlook.com">diplocheck@outlook.com</a>. Account deletion removes your profile, username, and link between scans and your identity.</p>
+        <p>You can request a copy of your data, correct inaccuracies, or delete your account entirely by emailing <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>. Account deletion removes your profile, username, and link between scans and your identity.</p>
         <h3>Children</h3>
         <p>DiploCheck isn't intended for children under 13. We don't knowingly collect data from anyone under 13.</p>
         <h3>Changes to this policy</h3>
         <p>We'll post any significant changes on this page and update the "Last updated" date.</p>
         <h3>Contact</h3>
-        <p>Questions? Email <a href="mailto:diplocheck@outlook.com">diplocheck@outlook.com</a>.</p>
+        <p>Questions? Email <a href="mailto:hello@diplocheck.com">hello@diplocheck.com</a>.</p>
     </div>
 </div>
 
