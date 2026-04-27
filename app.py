@@ -72,7 +72,7 @@ ofm_codes = {
     "WB":"United Arab Emirates","WD":"South Korea","WM":"Western Samoa","WZ":"United Kingdom",
     "XF":"Turkey","XY":"Ireland","XZ":"Australia",
     "YA":"Armenia","YG":"Georgia","YJ":"Tajikistan","YK":"Kazakhstan",
-    "CE":"Moldova","YR":"Russia","YT":"Turkmenistan",
+    "YM":"Hong Kong / Moldova","YR":"Russia","YT":"Turkmenistan",
     "YU":"Uzbekistan","YY":"Kyrgyzstan","GE":"Azerbaijan",
     "AE":"Uzbekistan","BV":"Solomon Islands","CK":"Namibia",
     "GK":"Montenegro","GY":"Chile","HD":"Argentina","HM":"Andorra",
@@ -95,7 +95,7 @@ COUNTRY_ISO = {
     "Congo, Republic of":"CG","North Korea":"KP","South Korea":"KR",
     "Syria":"SY","Myanmar":"MM","Bolivia":"BO","Iran":"IR",
     "Venezuela":"VE","Vietnam":"VN","Tanzania":"TZ","Laos":"LA",
-    "Moldova":"MD","Hong Kong / Moldova":"MD","Holy See (Vatican)":"VA",
+    "Moldova":"CE","Holy See (Vatican)":"VA",
     "Macedonia":"MK","French Caribbean":"GP","Swaziland":"SZ",
     "Western Samoa":"WS","Maledives":"MV","Diego Garcia":"IO",
     "Netherlands Antilles":"AN","Bermuda":"BM","Sao Tome et Principe":"ST",
@@ -269,6 +269,30 @@ def get_user_id(req):
     except:
         return None
 
+# ── Rate limiter (in-memory, per-user-or-IP) ──
+import time
+_last_action = {}
+RATE_LIMIT_SECONDS = 2.0
+
+def check_rate_limit(req):
+    """Return None if allowed, or (error_dict, status_code) if rate limited."""
+    user_id = get_user_id(req)
+    # Use user_id if logged in, else fall back to IP
+    key = user_id or req.headers.get("X-Forwarded-For", req.remote_addr or "anon").split(",")[0].strip()
+    now = time.time()
+    last = _last_action.get(key, 0)
+    if now - last < RATE_LIMIT_SECONDS:
+        wait = round(RATE_LIMIT_SECONDS - (now - last), 1)
+        return ({"error": f"Slow down — please wait {wait}s before checking another plate."}, 429)
+    _last_action[key] = now
+    # Periodic cleanup (every ~1000 calls): remove entries older than 5 min
+    if len(_last_action) > 1000:
+        cutoff = now - 300
+        for k in list(_last_action.keys()):
+            if _last_action[k] < cutoff:
+                del _last_action[k]
+    return None
+
 def parse_plate(text):
     clean = text.replace(" ","").replace("-","").replace(".","").upper()
     clean = re.sub(r'[^A-Z0-9]', '', clean)
@@ -394,6 +418,8 @@ def index():
 
 @app.route("/api/lookup", methods=["POST"])
 def lookup():
+    rl = check_rate_limit(request)
+    if rl: return jsonify(rl[0]), rl[1]
     data = request.json
     plate_text = data.get("plate", "")
     if not plate_text: return jsonify({"error": "No plate provided"}), 400
@@ -419,6 +445,8 @@ def trivia():
 
 @app.route("/api/scan-image", methods=["POST"])
 def scan_image():
+    rl = check_rate_limit(request)
+    if rl: return jsonify(rl[0]), rl[1]
     if "image" not in request.files: return jsonify({"error": "No image provided"}), 400
     file = request.files["image"]
     img_bytes = file.read()
